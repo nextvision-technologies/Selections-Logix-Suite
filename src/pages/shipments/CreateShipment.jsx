@@ -176,7 +176,7 @@ function Field({ label, name, register, errors, required, children, type = 'text
 function SenderForm({ register, errors }) {
   const cityErr = errors.sender?.city;
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
       <Field label="Name" name="sender.name" register={register} errors={errors} required placeholder="Sender or business name, e.g. Zaryab Fashion" maxLength={80} />
       <Field label="Phone" name="sender.phone" register={register} errors={errors} required {...phoneInputProps} format={cleanPhoneInput} />
       <Field label="Address" name="sender.address" register={register} errors={errors} required placeholder="Pickup address: shop / warehouse, street, area" maxLength={250} className="sm:col-span-2" />
@@ -647,14 +647,14 @@ export function CreateShipment() {
       <div ref={formTop} className="card mb-4 px-4 py-3"><Stepper steps={STEPS.map((s) => s.title)} current={step} onStepClick={setStep} /></div>
       <div className="grid items-start gap-4 lg:grid-cols-3">
         <form onSubmit={onFormSubmit} noValidate className="card min-w-0 lg:col-span-2">
-          <div className="border-b border-line px-4 py-3">
-            <p className="text-xs font-medium text-ink-muted">Step {step + 1} of {STEPS.length}</p>
-            <h2 className="text-base font-semibold">{STEPS[step].title}</h2>
-            <p className="text-sm text-ink-muted">{STEPS[step].desc}</p>
+          <div className="border-b border-line px-5 py-4 sm:px-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Step {step + 1} of {STEPS.length}</p>
+            <h2 className="mt-1 text-lg font-semibold text-ink">{STEPS[step].title}</h2>
+            <p className="mt-0.5 text-sm text-ink-muted">{STEPS[step].desc}</p>
           </div>
-          <div className="p-4">
+          <div className="px-5 py-5 sm:px-6">
             {step === 0 && (
-              <div className="space-y-3">
+              <div className="space-y-5">
                 {!isMerchant && (
                   <div>
                     <Field label="Merchant / customer" name="merchantId" register={register} errors={errors} required>
@@ -709,7 +709,7 @@ export function CreateShipment() {
             )}
 
             {step === 1 && (
-              <div className="space-y-3">
+              <div className="space-y-5">
                 {merchant?.receivers?.length > 0 && (
                   <div>
                     <label htmlFor="saved" className="label">Saved receiver</label>
@@ -727,7 +727,7 @@ export function CreateShipment() {
                     </select>
                   </div>
                 )}
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
                   <Field
                     label="Phone"
                     name="receiver.phone"
@@ -772,7 +772,7 @@ export function CreateShipment() {
                 {cnicClash && (
                   <Notice tone="warn">CNIC {receiverCnic} is already saved for <b>{cnicClash.name}</b> ({cnicClash.phone}). Make sure this is the same person.</Notice>
                 )}
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
                   <Field label="Full name" name="receiver.name" register={register} errors={errors} required placeholder="Receiver's full name, e.g. Sara Ahmed" maxLength={80} />
                   <Field
                     label="CNIC"
@@ -787,7 +787,7 @@ export function CreateShipment() {
                   <Field label="Complete address" name="receiver.address" register={register} errors={errors} required placeholder="House / flat no., street, block, area, e.g. House 12, Street 4, Block B, Gulberg" maxLength={250} className="sm:col-span-2" />
                   <Field label="Nearest landmark" name="receiver.landmark" register={register} errors={errors} placeholder="Optional, e.g. near Jamia Masjid / opposite Bank Alfalah" maxLength={120} className="sm:col-span-2" />
                 </div>
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-x-4 gap-y-5 sm:grid-cols-3">
                   <Field label="City" name="receiver.city" register={register} errors={errors} required>
                     <select id="receiver.city" className={clsx('input', errors.receiver?.city && 'input-error')} {...register('receiver.city')}>
                       <option value="">Select...</option>
@@ -820,7 +820,7 @@ export function CreateShipment() {
                 {type.liquid && <Notice tone="warn">Liquids must be in sealed, leak-proof containers.</Notice>}
                 {type.mustInsure && <Notice>Valuables are insured automatically. Enter the real price so the cover is correct.</Notice>}
 
-                <div className="space-y-3">
+                <div className="space-y-5">
                   {fields.map((f, i) => {
                     const e = errors.items?.[i] || {};
                     const it = v.items[i] || {};
@@ -950,7 +950,7 @@ export function CreateShipment() {
                   </fieldset>
                 )}
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
                   {v.paymentType === 'cod' && (
                     <Field
                       label={`COD amount (${currency})`}
@@ -985,7 +985,7 @@ export function CreateShipment() {
             )}
 
             {step === 5 && (v.paymentType === 'topay' ? (
-              <div className="space-y-3">
+              <div className="space-y-5">
                 <Notice>To Pay booking: nothing is collected now. The rider collects the delivery charges from the receiver at the door.</Notice>
                 <div className="flex items-baseline justify-between rounded-lg bg-surface p-3">
                   <span className="text-sm">Rider collects at delivery</span>
@@ -1011,7 +1011,7 @@ export function CreateShipment() {
                 </fieldset>
 
                 {method === 'cash' && (
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
                     <div>
                       <label htmlFor="payment.received" className="label">Cash received ({currency})<span className="text-danger"> *</span></label>
                       <div className="flex gap-2">
@@ -1027,7 +1027,7 @@ export function CreateShipment() {
                   </div>
                 )}
                 {method === 'online' && (
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
                     <Field label="Channel" name="payment.channel" register={register} errors={errors} required>
                       <select id="payment.channel" className={clsx('input', errors.payment?.channel && 'input-error')} {...register('payment.channel')}>
                         <option value="">Select...</option>
@@ -1052,13 +1052,13 @@ export function CreateShipment() {
             ))}
 
             {step === 6 && (
-              <div className="space-y-3">
+              <div className="space-y-5">
                 {duplicate && (
                   <Notice tone="warn">
                     <Link className="font-semibold underline" to={`/shipments/${duplicate.id}`}>{duplicate.awb}</Link> was booked for this receiver in the last 30 minutes. Make sure this is not a duplicate.
                   </Notice>
                 )}
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-x-4 gap-y-5 sm:grid-cols-2">
                   <ReviewBlock title="Sender" step={0} onEdit={setStep}>
                     <p className="font-medium">{v.sender.name}</p><p>{v.sender.address}, {v.sender.city}</p><p>{v.sender.phone}</p>
                   </ReviewBlock>
@@ -1094,13 +1094,13 @@ export function CreateShipment() {
               </div>
             )}
           </div>
-          <div className="flex justify-between border-t border-line p-4">
+          <div className="flex items-center justify-between gap-3 border-t border-line bg-surface px-5 py-4 sm:px-6">
             <button type="button" className="btn-outline" disabled={step === 0} onClick={() => setStep((s) => s - 1)}><ChevronLeft size={15} aria-hidden /> Back</button>
             {step < LAST
               ? <button key="next" type="submit" className="btn-primary">Next: {STEPS[step + 1].title} <ChevronRight size={15} aria-hidden /></button>
               : <button key="submit" type="submit" className="btn-primary" disabled={booking}>{booking ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <CheckCircle2 size={15} aria-hidden />} {booking ? 'Booking...' : 'Confirm booking'}</button>}
           </div>
-          <div className="px-4 pb-3 text-end"><button type="button" className="text-xs text-ink-muted hover:text-ink" onClick={() => { writeDraft(draftKey, null); navigate('/shipments'); }}>Discard and exit</button></div>
+          <div className="px-5 pb-4 pt-1 text-end sm:px-6"><button type="button" className="text-xs font-medium text-ink-muted underline-offset-2 hover:text-danger hover:underline" onClick={() => { writeDraft(draftKey, null); navigate('/shipments'); }}>Discard and exit</button></div>
         </form>
 
         <Card title="Booking summary" className="lg:sticky lg:top-20">

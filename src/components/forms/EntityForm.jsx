@@ -45,7 +45,7 @@ export const opt = (o) => (typeof o === 'string' ? { value: o, label: o } : o);
 
 export function FieldError({ message }) {
   if (!message) return null;
-  return <p role="alert" className="mt-1 text-xs font-medium text-danger">{message}</p>;
+  return <p role="alert" className="mt-1.5 text-xs font-medium text-danger">{message}</p>;
 }
 
 export function FieldRow({ field, register, error }) {

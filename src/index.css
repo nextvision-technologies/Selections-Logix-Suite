@@ -17,9 +17,27 @@
   .btn-outline { @apply btn bg-white border border-line text-ink hover:bg-surface; }
   .btn-ghost { @apply btn text-ink-muted hover:bg-gray-100 hover:text-ink; }
   .btn-sm { @apply px-2.5 py-1.5 text-xs; }
-  .input { @apply w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-ink placeholder:text-gray-400 focus:border-primary-hover focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:bg-gray-50 disabled:text-ink-muted; }
-  .input-error { @apply border-danger focus:border-danger focus:ring-danger/30; }
-  .label { @apply mb-1 block text-xs font-medium text-gray-700; }
+  /* Form fields: clear 1px gray-300 border, 40px tall, dark border + soft yellow ring on focus. */
+  .input {
+    @apply block h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-ink shadow-sm transition-colors
+      placeholder:text-gray-400 hover:border-gray-400
+      focus:border-gray-900 focus:outline-none focus:ring-4 focus:ring-primary/30
+      disabled:cursor-not-allowed disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-500 disabled:shadow-none
+      read-only:bg-gray-50;
+  }
+  textarea.input { @apply h-auto py-2.5 leading-relaxed; }
+  /* Native selects get the same height and a consistent chevron in every browser. */
+  select.input {
+    @apply cursor-pointer appearance-none pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+  }
+  select.input:invalid, select.input option[value=''] { @apply text-gray-400; }
+  select.input option { @apply text-ink; }
+  .input-error { @apply border-danger bg-danger-light/30 hover:border-danger focus:border-danger focus:ring-danger/20; }
+  .label { @apply mb-1.5 block text-[13px] font-semibold leading-5 text-gray-800; }
   .link { @apply font-medium text-ink underline decoration-primary decoration-2 underline-offset-2 hover:decoration-primary-hover; }
   .chip { @apply inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-700; }
 }
