@@ -1,9 +1,9 @@
 // Branch setup in the database (Super Admin). Branch ids are short codes such as LHE,
 // which the operations screens also use, so they cannot change after creation.
 import { useCallback, useEffect, useState } from 'react';
-import { Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
 import DataTable from '../../components/tables/DataTable.jsx';
-import { PageHeader, PageSkeleton, StatusBadge } from '../../components/ui/index.jsx';
+import { PageHeader, PageSkeleton, StatusBadge, RefreshButton } from '../../components/ui/index.jsx';
 import { FormModal } from '../../components/forms/EntityForm.jsx';
 import { confirm, toast } from '../../store/uiStore.js';
 import { BRANCH_TYPES, CITY_NAMES } from '../../data/geo.js';
@@ -47,7 +47,7 @@ export function BranchSetup() {
         subtitle={`${rows.length} branches in the database`}
         actions={(
           <>
-            <button type="button" className="btn-outline" onClick={load}><RefreshCw size={15} aria-hidden /> Refresh</button>
+            <RefreshButton onRefresh={load} />
             <button type="button" className="btn-primary" onClick={() => setEdit({})}><Plus size={16} aria-hidden /> Add branch</button>
           </>
         )}

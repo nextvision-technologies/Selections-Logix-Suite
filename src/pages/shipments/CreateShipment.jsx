@@ -24,7 +24,7 @@ import {
   PAYMENT_TERMS, SHIPPING_PLANS, paymentMethodLabel, paymentTerm, paymentTermLabel, shippingPlan, paymentTypeLabel, productTypeLabel, quote, serviceLabel, volumetricWeight,
 } from '../../utils/pricing.js';
 import { cleanPhoneInput, isPhone, phoneInputProps, zPhone, zPhoneOptional } from '../../utils/validation.js';
-import { CNIC_PATTERN, fmtCurrency, formatCnic, phoneKey, sum, toPKR } from '../../utils/format.js';
+import { CNIC_PATTERN, fmtCurrency, formatCnic, maskNationalId, phoneKey, sum, toPKR } from '../../utils/format.js';
 import { LabelPrintModal } from './ShipmentList.jsx';
 
 const phone = zPhone('Phone');
@@ -111,6 +111,25 @@ const readDraft = (key) => {
 const writeDraft = (key, value) => {
   try { if (value) localStorage.setItem(key, JSON.stringify(value)); else localStorage.removeItem(key); } catch { /* storage blocked */ }
 };
+
+/** The phone with the typed digits wrapped in <mark>, wherever they fall between spaces and dashes. */
+function HighlightPhone({ phone = '', digits }) {
+  const pos = [];
+  [...phone].forEach((ch, i) => { if (/\d/.test(ch)) pos.push(i); });
+  const at = digits ? pos.map((i) => phone[i]).join('').indexOf(digits) : -1;
+  if (at < 0) return <>{phone}</>;
+  const from = pos[at];
+  const to = pos[at + digits.length - 1] + 1;
+  return (
+    <>
+      {phone.slice(0, from)}
+      <mark className="rounded bg-primary px-0.5 font-bold text-ink">{phone.slice(from, to)}</mark>
+      {phone.slice(to)}
+    </>
+  );
+}
+
+const initials = (name = '') => name.split(' ').filter(Boolean).map((p) => p[0]).slice(0, 2).join('').toUpperCase() || '?';
 
 const sameName = (a = '', b = '') => a.trim().replace(/\s+/g, ' ').toLowerCase() === b.trim().replace(/\s+/g, ' ').toLowerCase();
 
@@ -783,15 +802,30 @@ export function CreateShipment() {
                   </label>
                 </div>
                 {suggestions.length > 0 && (
-                  <div className="rounded-lg border border-line">
-                    <p className="border-b border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink-muted">Saved receivers matching "{receiverPhone}"</p>
-                    <ul className="divide-y divide-line">
+                  <div className="animate-fade-up overflow-hidden rounded-2xl border-2 border-primary/70 bg-white shadow-[0_8px_30px_-12px_rgba(234,179,8,.55)]">
+                    <p className="flex items-center justify-between gap-2 bg-primary-light px-4 py-2 text-xs font-semibold text-primary-dark">
+                      <span className="flex items-center gap-1.5"><UserCheck size={14} aria-hidden /> {suggestions.length} saved receiver{suggestions.length === 1 ? '' : 's'} match "{receiverPhone}"</span>
+                      <span className="hidden font-medium sm:inline">Click one to fill in all details</span>
+                    </p>
+                    <ul className="divide-y divide-line/70">
                       {suggestions.map((r) => (
                         <li key={r.id}>
-                          <button type="button" className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-3 py-2 text-start text-sm hover:bg-primary-light" onClick={() => pickSuggestion(r)}>
-                            <span className="flex items-center gap-2 font-medium"><UserCheck size={15} aria-hidden /> {r.name}</span>
-                            <span className="tabular-nums">{r.phone}</span>
-                            <span className="w-full truncate text-xs text-ink-muted sm:w-auto">{[r.city, r.zone].filter(Boolean).join(' - ')}{r.shipments_count ? ` · ${r.shipments_count} shipment${r.shipments_count === 1 ? '' : 's'}` : ''}</span>
+                          <button type="button" className="group flex w-full items-start gap-3 px-4 py-3 text-start transition-colors hover:bg-primary-light/50 focus-visible:bg-primary-light/50" onClick={() => pickSuggestion(r)}>
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-amber-500 text-sm font-bold text-ink shadow-sm">{initials(r.name)}</span>
+                            <span className="min-w-0 flex-1">
+                              <span className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                                <span className="text-[15px] font-semibold text-ink">{r.name}</span>
+                                <span className="font-mono text-sm tabular-nums text-ink"><HighlightPhone phone={r.phone} digits={needle} /></span>
+                                {r.alt_phone && <span className="text-xs text-ink-muted">/ <HighlightPhone phone={r.alt_phone} digits={needle} /></span>}
+                              </span>
+                              <span className="mt-0.5 block truncate text-xs text-ink-muted">{[r.address, r.landmark && `near ${r.landmark}`].filter(Boolean).join(', ')}</span>
+                              <span className="mt-1.5 flex flex-wrap gap-1.5">
+                                {r.city && <span className="chip">{[r.city, r.zone].filter(Boolean).join(' - ')}</span>}
+                                {r.cnic && <span className="chip font-mono">CNIC {maskNationalId(r.cnic)}</span>}
+                                {r.shipments_count > 0 && <span className="chip !bg-emerald-100 !text-emerald-800">{r.shipments_count} shipment{r.shipments_count === 1 ? '' : 's'}</span>}
+                              </span>
+                            </span>
+                            <span className="mt-2 hidden shrink-0 rounded-lg bg-ink px-2.5 py-1 text-xs font-semibold text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 sm:block">Use</span>
                           </button>
                         </li>
                       ))}

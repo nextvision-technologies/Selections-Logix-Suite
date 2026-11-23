@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout.jsx';
-import { ConfirmHost, PageSkeleton, ToastHost } from './components/ui/index.jsx';
+import { BusyBar, ConfirmHost, PageSkeleton, ToastHost } from './components/ui/index.jsx';
 import { ErrorBoundary, Forbidden, NotFound } from './components/layout/Fallbacks.jsx';
 import { Guard, RequireAuth, routeTable, LoginPage, TrackPage } from './routes/index.jsx';
 
@@ -23,6 +23,7 @@ export default function App() {
           </Route>
         </Routes>
       </Suspense>
+      <BusyBar />
       <ToastHost />
       <ConfirmHost />
     </ErrorBoundary>

@@ -2,6 +2,7 @@
 // through the `api` function (functions/api), which checks the caller's role, and reads only
 // return rows whose permissions include the signed-in user.
 import { Account, Client, ExecutionMethod, Functions, ID, Query, Storage, TablesDB } from 'appwrite';
+import { trackBusy } from '../store/uiStore.js';
 
 export { ID, Query };
 
@@ -89,7 +90,10 @@ export async function getRow(tableId, rowId) {
 
 // ---------------------------------------------------------------- the api function
 /** Calls functions/api with { action, ...payload }. Throws with a readable message. */
-export async function callApi(action, payload = {}) {
+/** Runs one action on the api function. Tracked, so the app shows it is working. */
+export const callApi = (action, payload = {}) => trackBusy(runApi(action, payload));
+
+async function runApi(action, payload) {
   let exec;
   try {
     exec = await functions.createExecution({ functionId: API_FUNCTION, body: JSON.stringify({ action, ...payload }), method: ExecutionMethod.POST });

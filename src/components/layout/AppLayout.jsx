@@ -11,6 +11,7 @@ import { navFor, labelForPath } from '../../routes/index.jsx';
 import { ROLE_LABELS } from '../../data/config.js';
 import { CURRENCIES, fmtTimeAgo } from '../../utils/format.js';
 import { ErrorBoundary } from './Fallbacks.jsx';
+import WelcomeDoor from './WelcomeDoor.jsx';
 import { PageSkeleton } from '../ui/index.jsx';
 
 export function Logo({ compact, className, dark }) {
@@ -332,10 +333,12 @@ function Breadcrumbs() {
 export default function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   useDbSync();
+  const synced = useData((s) => s.synced);
   const { pathname } = useLocation();
   useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   return (
     <div className="flex min-h-screen">
+      <WelcomeDoor />
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:rounded focus:bg-primary focus:px-3 focus:py-2">Skip to content</a>
       <Sidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
@@ -345,7 +348,8 @@ export default function AppLayout() {
           {/* Keyed by path so a crashed screen recovers when the user navigates away. */}
           <ErrorBoundary key={pathname}>
             <Suspense fallback={<PageSkeleton />}>
-              <Outlet />
+              {/* Screens wait for the first database load instead of flashing empty lists and zeros. */}
+              {synced ? <Outlet /> : <PageSkeleton label="Loading your data..." />}
             </Suspense>
           </ErrorBoundary>
         </main>

@@ -14,7 +14,7 @@ import { ROLE_LABELS } from '../data/config.js';
 
 const nowISO = () => new Date().toISOString();
 // Loaded from the database on sign-in and kept fresh; never saved in the browser.
-const DB_KEYS = ['branches', 'merchants', 'riders', 'users', 'rateCard', 'shipments', 'codTransactions', 'riderDeposits', 'payouts'];
+const DB_KEYS = ['branches', 'merchants', 'riders', 'users', 'rateCard', 'shipments', 'codTransactions', 'riderDeposits', 'payouts', 'synced'];
 
 const actor = () => {
   const u = useAuth.getState().user;
@@ -32,6 +32,8 @@ export const useData = create(
   persist(
     (set, get) => ({
       ...seed(),
+      // False until the first load from the database after sign-in finishes; screens show a loader meanwhile.
+      synced: false,
 
       // ---- generic CRUD ----
       addItem: (col, item, entity, detail) => set((s) => ({

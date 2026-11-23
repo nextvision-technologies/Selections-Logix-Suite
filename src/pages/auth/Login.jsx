@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Eye, EyeOff, Loader2, PackageSearch } from 'lucide-react';
 import { useAuth } from '../../store/authStore.js';
-import { useUI, toast } from '../../store/uiStore.js';
+import { useUI, useWelcome } from '../../store/uiStore.js';
 import { Logo } from '../../components/layout/AppLayout.jsx';
 import { FieldError } from '../../components/forms/EntityForm.jsx';
 import { getRemember, setRemember } from '../../lib/appwrite.js';
@@ -41,7 +41,7 @@ export default function Login() {
     const res = await login(email, password);
     if (res.error) { setFailed(res.error); return; }
     setBranch('ALL');
-    toast.success(`Welcome back, ${res.user.name}`);
+    useWelcome.setState({ show: true }); // the welcome door greets them instead of a toast
     navigate(location.state?.from || '/', { replace: true });
   };
 

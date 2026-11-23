@@ -1,6 +1,6 @@
 // Schema-driven form on react-hook-form + zod. Most add/edit dialogs in the app are this
 // component plus a list of field definitions, so validation behaves the same everywhere.
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -97,7 +97,7 @@ export function FieldRow({ field, register, error }) {
 
 const blankFor = (f) => (f.type === 'checkbox' ? false : '');
 
-export function EntityForm({ fields, defaultValues, onSubmit, formId, schema, columns = 2 }) {
+export function EntityForm({ fields, defaultValues, onSubmit, formId, schema, columns = 2, onBusy }) {
   const resolver = useMemo(() => zodResolver(schema || buildSchema(fields)), [fields, schema]);
   const initial = () => Object.fromEntries(fields.map((f) => [f.name, defaultValues?.[f.name] ?? f.default ?? blankFor(f)]));
   const { register, handleSubmit, reset, formState: { errors } } = useForm({ resolver, defaultValues: initial(), mode: 'onTouched' });
@@ -105,7 +105,14 @@ export function EntityForm({ fields, defaultValues, onSubmit, formId, schema, co
   const seedKey = JSON.stringify(defaultValues ?? null); // by value: callers pass inline objects
   useEffect(() => { reset(initial()); /* eslint-disable-next-line */ }, [seedKey]);
   return (
-    <form id={formId} onSubmit={handleSubmit(onSubmit)} noValidate className={clsx('grid gap-3', columns === 2 && 'sm:grid-cols-2')}>
+    <form
+      id={formId}
+      onSubmit={handleSubmit(async (values) => {
+        onBusy?.(true);
+        try { await onSubmit(values); } finally { onBusy?.(false); }
+      })}
+      noValidate
+      className={clsx('grid gap-3', columns === 2 && 'sm:grid-cols-2')}>
       {fields.map((f) => (
         <div key={f.name} className={clsx(f.full && 'sm:col-span-2')}>
           <FieldRow field={f} register={register} error={errors[f.name]} />
@@ -118,6 +125,7 @@ export function EntityForm({ fields, defaultValues, onSubmit, formId, schema, co
 /** Modal (or Drawer) wrapping an EntityForm with Save / Cancel. */
 export function FormModal({ open, onClose, title, fields, defaultValues, onSubmit, submitLabel = 'Save', size = 'md', drawer, schema, extra }) {
   const formId = useMemo(() => `form-${Math.random().toString(36).slice(2, 8)}`, []);
+  const [saving, setSaving] = useState(false);
   const Shell = drawer ? Drawer : Modal;
   return (
     <Shell
@@ -127,12 +135,15 @@ export function FormModal({ open, onClose, title, fields, defaultValues, onSubmi
       size={size}
       footer={(
         <>
-          <button type="button" className="btn-outline" onClick={onClose}>Cancel</button>
-          <button type="submit" form={formId} className="btn-primary">{submitLabel}</button>
+          <button type="button" className="btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
+          <button type="submit" form={formId} className="btn-primary" disabled={saving}>
+            {saving && <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink/25 border-t-ink" aria-hidden />}
+            {saving ? 'Saving...' : submitLabel}
+          </button>
         </>
       )}
     >
-      {open && <EntityForm formId={formId} fields={fields} defaultValues={defaultValues} onSubmit={onSubmit} schema={schema} />}
+      {open && <EntityForm formId={formId} fields={fields} defaultValues={defaultValues} onSubmit={onSubmit} schema={schema} onBusy={setSaving} />}
       {extra}
     </Shell>
   );

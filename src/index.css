@@ -80,7 +80,12 @@
   .tabular { font-variant-numeric: tabular-nums; }
 }
 
+@keyframes busy-slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(320%); } }
 @keyframes stagger-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* Welcome door: lines rise in one after another (delay set inline). */
+@keyframes door-in { from { opacity: 0; transform: translateY(10px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+.door-in { animation: door-in .7s cubic-bezier(.2,.7,.2,1) both; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

@@ -44,3 +44,19 @@ export const useConfirmStore = create((set) => ({
 export const confirm = (opts) => new Promise((resolve) => {
   useConfirmStore.getState().open({ confirmLabel: 'Confirm', danger: true, ...opts, resolve });
 });
+
+// Server actions in flight. The app shows a progress bar while any is running.
+export const useBusy = create(() => ({ count: 0 }));
+
+/** Counts the promise as busy until it settles, then returns its result. */
+export async function trackBusy(promise) {
+  useBusy.setState((s) => ({ count: s.count + 1 }));
+  try {
+    return await promise;
+  } finally {
+    useBusy.setState((s) => ({ count: Math.max(s.count - 1, 0) }));
+  }
+}
+
+// Set by the login screen so the welcome door plays once after signing in (not on refresh).
+export const useWelcome = create(() => ({ show: false }));

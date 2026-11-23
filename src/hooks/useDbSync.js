@@ -70,6 +70,7 @@ export async function syncFromDb() {
     codTransactions: codTxns.data || s.codTransactions,
     riderDeposits: deposits.data || s.riderDeposits,
     payouts: payouts.data || s.payouts,
+    synced: true,
   }));
 }
 
@@ -79,6 +80,8 @@ export function useDbSync() {
   const resync = useCallback(() => syncFromDb().catch(() => { /* screens keep the local data */ }), []);
   useEffect(() => {
     if (!userId) return undefined;
+    // A new sign-in must not show the previous user's lists while its own are loading.
+    useData.setState({ synced: false });
     resync();
     // Other people book and update parcels too: refresh every 30 s and when the tab is opened again.
     const timer = setInterval(() => { if (document.visibilityState === 'visible') resync(); }, 30000);

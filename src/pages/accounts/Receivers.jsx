@@ -3,9 +3,9 @@
 // branch manager and the user who first saved a receiver can edit it.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Contact, Pencil, RefreshCw, Repeat, UserPlus } from 'lucide-react';
+import { Contact, Pencil, Repeat, UserPlus } from 'lucide-react';
 import DataTable from '../../components/tables/DataTable.jsx';
-import { Card, EmptyState, Modal, PageHeader, PageSkeleton, StatCard, StatusBadge } from '../../components/ui/index.jsx';
+import { Card, EmptyState, Modal, PageHeader, PageSkeleton, StatCard, StatusBadge, RefreshButton } from '../../components/ui/index.jsx';
 import { FormModal, buildSchema } from '../../components/forms/EntityForm.jsx';
 import { useAuth } from '../../store/authStore.js';
 import { toast } from '../../store/uiStore.js';
@@ -26,8 +26,8 @@ const canEdit = (user, r) => ['super_admin', 'branch_manager'].includes(user.rol
 function useReceivers(customerId, skip) {
   const [rows, setRows] = useState(null);
   const load = useCallback(() => {
-    if (skip) { setRows([]); return; }
-    listReceivers(customerId).then(setRows).catch((e) => { toast.error(e.message); setRows([]); });
+    if (skip) { setRows([]); return Promise.resolve(); }
+    return listReceivers(customerId).then(setRows).catch((e) => { toast.error(e.message); setRows([]); });
   }, [customerId, skip]);
   useEffect(() => { load(); }, [load]);
   return [rows, load];
@@ -174,7 +174,7 @@ export function ReceiverList() {
       <PageHeader
         title="Receivers"
         subtitle="Saved automatically from every booking, one per customer and phone number."
-        actions={<button type="button" className="btn-outline" onClick={load}><RefreshCw size={15} aria-hidden /> Refresh</button>}
+        actions={<RefreshButton onRefresh={load} />}
       />
       <ReceiverStats rows={rows} />
       <ReceiverTable
@@ -200,7 +200,7 @@ export function MyReceivers() {
       <PageHeader
         title="My Receivers"
         subtitle="People you have sent parcels to. Receivers you added yourself can be edited."
-        actions={<button type="button" className="btn-outline" onClick={load}><RefreshCw size={15} aria-hidden /> Refresh</button>}
+        actions={<RefreshButton onRefresh={load} />}
       />
       <ReceiverStats rows={rows} />
       <ReceiverTable rows={rows} reload={load} exportName="my-receivers" filters={[{ key: 'city', label: 'City', options: cities }]} />

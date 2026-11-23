@@ -3,9 +3,9 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
-import { AlertTriangle, Check, CheckCircle2, Info, Inbox, UploadCloud, X, XCircle } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle2, Info, Inbox, RefreshCw, UploadCloud, X, XCircle } from 'lucide-react';
 import { subDays } from 'date-fns';
-import { useConfirmStore, useToasts, toast } from '../../store/uiStore.js';
+import { useBusy, useConfirmStore, useToasts, toast } from '../../store/uiStore.js';
 import { statusTone } from '../../utils/status.js';
 import { fmtDateTime, isoDay } from '../../utils/format.js';
 
@@ -43,6 +43,36 @@ export function StatCard({ label, value, hint, icon: Icon, tone = 'default', onC
       <p className={clsx('relative mt-1 whitespace-nowrap font-brand text-[26px] font-bold leading-tight tracking-tight tabular', tone === 'danger' && 'text-danger')}>{value}</p>
       {hint && <p className="relative mt-1 text-xs text-ink-muted">{hint}</p>}
     </Comp>
+  );
+}
+
+/** Thin bar at the top of the window while the server is saving or loading something. */
+export function BusyBar() {
+  const busy = useBusy((s) => s.count > 0);
+  useEffect(() => {
+    document.documentElement.classList.toggle('cursor-progress', busy);
+  }, [busy]);
+  return (
+    <>
+      <div aria-hidden className={clsx('pointer-events-none fixed inset-x-0 top-0 z-[70] h-[3px] overflow-hidden bg-primary/20 transition-opacity duration-300', busy ? 'opacity-100' : 'opacity-0')}>
+        <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-primary via-amber-400 to-primary-hover [animation:busy-slide_1.1s_ease-in-out_infinite]" />
+      </div>
+      <span className="sr-only" role="status" aria-live="polite">{busy ? 'Working...' : ''}</span>
+    </>
+  );
+}
+
+/** Refresh button that spins and is disabled until the reload finishes. */
+export function RefreshButton({ onRefresh, label = 'Refresh', className = 'btn-outline' }) {
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    setBusy(true);
+    try { await onRefresh(); } finally { setBusy(false); }
+  };
+  return (
+    <button type="button" className={className} onClick={run} disabled={busy}>
+      <RefreshCw size={15} className={busy ? 'animate-spin' : ''} aria-hidden /> {busy ? 'Refreshing...' : label}
+    </button>
   );
 }
 
@@ -85,9 +115,15 @@ export function Skeleton({ className }) {
   return <div className={clsx('animate-pulse rounded-lg bg-slate-200/80', className)} />;
 }
 
-export function PageSkeleton() {
+export function PageSkeleton({ label }) {
   return (
-    <div className="space-y-4" role="status" aria-label="Loading">
+    <div className="space-y-4" role="status" aria-label={label || 'Loading'}>
+      {label && (
+        <p className="flex items-center gap-2 text-sm font-medium text-ink-muted">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-primary-hover" aria-hidden />
+          {label}
+        </p>
+      )}
       <Skeleton className="h-7 w-56" />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}

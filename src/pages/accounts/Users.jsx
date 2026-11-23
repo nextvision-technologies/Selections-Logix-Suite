@@ -9,9 +9,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import clsx from 'clsx';
-import { Bike, Building2, Calculator, Crown, KeyRound, Loader2, Pencil, Plus, Power, RefreshCw, Store, Warehouse } from 'lucide-react';
+import { Bike, Building2, Calculator, Crown, KeyRound, Loader2, Pencil, Plus, Power, Store, Warehouse } from 'lucide-react';
 import DataTable from '../../components/tables/DataTable.jsx';
-import { Drawer, PageHeader, PageSkeleton, StatCard, StatusBadge, Tabs } from '../../components/ui/index.jsx';
+import { Drawer, PageHeader, PageSkeleton, StatCard, StatusBadge, Tabs, RefreshButton } from '../../components/ui/index.jsx';
 import { FieldError, FormModal } from '../../components/forms/EntityForm.jsx';
 import { PermissionMatrix } from '../admin/index.jsx';
 import { useAuth } from '../../store/authStore.js';
@@ -351,7 +351,7 @@ export function UsersAdmin() {
         subtitle="Every login is created here by the Super Admin"
         actions={tab === 'users' && (
           <>
-            <button type="button" className="btn-outline" onClick={load}><RefreshCw size={15} aria-hidden /> Refresh</button>
+            <RefreshButton onRefresh={load} />
             <button type="button" className="btn-primary" onClick={() => setEditing({})}><Plus size={16} aria-hidden /> Add user</button>
           </>
         )}

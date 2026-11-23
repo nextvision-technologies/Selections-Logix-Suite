@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import clsx from 'clsx';
-import { ArrowLeftRight, Building2, Clock, Pencil, Phone, Plus, Trash2, User, Wallet } from 'lucide-react';
+import { ArrowLeftRight, Building2, CheckSquare, Clock, Pencil, Phone, Plus, Square, Trash2, User, Wallet, X } from 'lucide-react';
 import DataTable from '../../components/tables/DataTable.jsx';
 import { Card, KV, PageHeader, StatCard, StatusBadge, Tabs } from '../../components/ui/index.jsx';
 import { FormModal } from '../../components/forms/EntityForm.jsx';
@@ -15,6 +15,8 @@ import { BRANCH_TYPES, CITY_NAMES } from '../../data/geo.js';
 import { branchStats, dailySeries, riderStats } from '../../data/helpers.js';
 import { fmtNumber, fmtPct } from '../../utils/format.js';
 import { shipmentColumns } from '../shipments/columns.jsx';
+import { syncFromDb } from '../../hooks/useDbSync.js';
+import { deleteBranch } from '../../lib/api.js';
 
 const BRANCH_FIELDS = [
   { name: 'name', label: 'Branch name', required: true, full: true },
@@ -35,22 +37,92 @@ export function BranchList() {
   const user = useAuth((s) => s.user);
   const { branches, shipments, codTransactions, riders, addItem } = useData();
   const [adding, setAdding] = useState(false);
+  // Multi-delete (Super Admin): pick cards, then delete them through the server one by one.
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState(() => new Set());
+  const [deleting, setDeleting] = useState(false);
   const stats = useMemo(() => Object.fromEntries(branches.map((b) => [b.id, branchStats(b.id, shipments, codTransactions)])), [branches, shipments, codTransactions]);
   const visible = user.role === 'branch_manager' ? branches.filter((b) => b.id === user.branchId) : branches;
+  const isAdmin = user.role === 'super_admin';
+  const toggle = (id) => setSelected((cur) => { const next = new Set(cur); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const stopSelecting = () => { setSelecting(false); setSelected(new Set()); };
+  // A branch that still has parcels or riders is kept: deleting it would orphan them.
+  const blockedBy = (b) => {
+    const parts = [];
+    if (stats[b.id]?.total) parts.push(`${stats[b.id].total} shipments`);
+    const r = riders.filter((x) => x.branchId === b.id).length;
+    if (r) parts.push(`${r} riders`);
+    return parts.join(', ');
+  };
+
+  const deleteSelected = async () => {
+    const chosen = visible.filter((b) => selected.has(b.id));
+    const blocked = chosen.filter((b) => blockedBy(b));
+    const deletable = chosen.filter((b) => !blockedBy(b));
+    if (!deletable.length) {
+      toast.error(`Cannot delete: ${blocked.map((b) => `${b.name} (${blockedBy(b)})`).join('; ')}. Set them Inactive instead.`);
+      return;
+    }
+    const ok = await confirm({
+      title: `Delete ${deletable.length} branch${deletable.length === 1 ? '' : 'es'}?`,
+      message: `${deletable.map((b) => b.name).join(', ')} will be removed permanently.${blocked.length ? ` Skipped because they are in use: ${blocked.map((b) => b.name).join(', ')}.` : ''}`,
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
+    setDeleting(true);
+    const failed = [];
+    let done = 0;
+    for (const b of deletable) {
+      try { await deleteBranch(b.id); done += 1; } catch (e) { failed.push(`${b.name}: ${e.message?.includes('foreign key') ? 'still in use' : e.message}`); }
+    }
+    setDeleting(false);
+    stopSelecting();
+    await syncFromDb().catch(() => {});
+    if (done) toast.success(`${done} branch${done === 1 ? '' : 'es'} deleted`);
+    if (failed.length) toast.error(`Not deleted: ${failed.join('; ')}`);
+  };
+
+  const headerActions = isAdmin && (selecting ? (
+    <>
+      <button type="button" className="btn-outline" onClick={() => setSelected(selected.size === visible.length ? new Set() : new Set(visible.map((b) => b.id)))}>
+        {selected.size === visible.length ? <><Square size={15} aria-hidden /> Clear all</> : <><CheckSquare size={15} aria-hidden /> Select all</>}
+      </button>
+      <button type="button" className="btn-ghost" onClick={stopSelecting} disabled={deleting}><X size={15} aria-hidden /> Cancel</button>
+      <button type="button" className="btn-danger" onClick={deleteSelected} disabled={!selected.size || deleting}><Trash2 size={15} aria-hidden /> {deleting ? 'Deleting...' : `Delete selected (${selected.size})`}</button>
+    </>
+  ) : (
+    <>
+      {visible.length > 0 && <button type="button" className="btn-outline" onClick={() => setSelecting(true)}><CheckSquare size={15} aria-hidden /> Select</button>}
+      <button type="button" className="btn-primary" onClick={() => setAdding(true)}><Plus size={16} aria-hidden /> Add branch</button>
+    </>
+  ));
+
   return (
     <div>
-      <PageHeader title="Branches" subtitle={`${visible.length} locations across the network`} actions={user.role === 'super_admin' && <button type="button" className="btn-primary" onClick={() => setAdding(true)}><Plus size={16} aria-hidden /> Add branch</button>} />
+      <PageHeader title="Branches" subtitle={selecting ? `${selected.size} of ${visible.length} selected. Click cards to select them.` : `${visible.length} locations across the network`} actions={headerActions} />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {visible.map((b) => (
-          <button key={b.id} type="button" onClick={() => navigate(`/branches/${b.id}`)} className="card p-4 text-start transition hover:border-primary-hover">
+          <button
+            key={b.id}
+            type="button"
+            onClick={() => (selecting ? toggle(b.id) : navigate(`/branches/${b.id}`))}
+            aria-pressed={selecting ? selected.has(b.id) : undefined}
+            className={clsx('card card-hover relative p-4 text-start sm:p-5', selecting && selected.has(b.id) && 'border-danger ring-2 ring-danger/40')}
+          >
             <div className="mb-2 flex items-start justify-between gap-2">
-              <div className="min-w-0">
+              {selecting && (
+                <span className={clsx('mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2', selected.has(b.id) ? 'border-danger bg-danger text-white' : 'border-slate-300 bg-white')} aria-hidden>
+                  {selected.has(b.id) && <svg viewBox="0 0 12 12" className="h-3 w-3"><path d="M2 6.5 4.8 9 10 3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                </span>
+              )}
+              <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{b.name}</p>
                 <p className="text-xs text-ink-muted">{b.code} - {b.type}</p>
               </div>
               <StatusBadge status={b.status} />
             </div>
             <p className="mb-3 line-clamp-1 text-xs text-ink-muted">{b.address}</p>
+            {selecting && blockedBy(b) && <p className="mb-2 rounded-lg bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-800">In use ({blockedBy(b)}): will be skipped</p>}
             <div className="grid grid-cols-3 gap-2 border-t border-line pt-3 text-center">
               <div><p className="text-lg font-bold">{stats[b.id]?.total || 0}</p><p className="text-[11px] text-ink-muted">Shipments</p></div>
               <div><p className="text-lg font-bold">{riders.filter((r) => r.branchId === b.id).length}</p><p className="text-[11px] text-ink-muted">Riders</p></div>
@@ -80,7 +152,7 @@ export function BranchDetail() {
   const { money, compact } = useMoney();
   const lookups = useLookups();
   const user = useAuth((s) => s.user);
-  const { branches, shipments, codTransactions, riders, users, updateItem, removeItem } = useData();
+  const { branches, shipments, codTransactions, riders, users, updateItem } = useData();
   const navigate = useNavigate();
   const [tab, setTab] = useState('overview');
   const [editing, setEditing] = useState(false);
@@ -97,9 +169,14 @@ export function BranchDetail() {
   const del = async () => {
     if (stats.total > 0 || branchRiders.length > 0) { toast.error(`Cannot delete: ${stats.total} shipments and ${branchRiders.length} riders are linked. Set it to Inactive instead.`); return; }
     if (await confirm({ title: 'Delete branch?', message: `${branch.name} will be removed.`, confirmLabel: 'Delete' })) {
-      removeItem('branches', id, 'Branch');
-      toast.success('Branch deleted');
-      navigate('/branches');
+      try {
+        await deleteBranch(id);
+        await syncFromDb().catch(() => {});
+        toast.success('Branch deleted');
+        navigate('/branches');
+      } catch (e) {
+        toast.error(e.message?.includes('foreign key') ? 'Branch is still in use. Set it Inactive instead.' : e.message);
+      }
     }
   };
 

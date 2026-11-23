@@ -2,9 +2,9 @@
 // merchant's own "My Account" page.
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { BadgeCheck, Download, Eye, FileSpreadsheet, FileText, KeyRound, Pencil, Plus, RefreshCw, Trash2, Users } from 'lucide-react';
+import { BadgeCheck, Download, Eye, FileSpreadsheet, FileText, KeyRound, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import DataTable from '../../components/tables/DataTable.jsx';
-import { Card, EmptyState, KV, PageHeader, PageSkeleton, StatusBadge } from '../../components/ui/index.jsx';
+import { Card, EmptyState, KV, PageHeader, PageSkeleton, StatusBadge, RefreshButton } from '../../components/ui/index.jsx';
 import { FormModal } from '../../components/forms/EntityForm.jsx';
 import { RecordNotFound } from '../../components/layout/Fallbacks.jsx';
 import { useAuth } from '../../store/authStore.js';
@@ -53,7 +53,7 @@ export function CustomerAccounts() {
         subtitle={`${rows.length} merchant / customer accounts`}
         actions={(
           <>
-            <button type="button" className="btn-outline" onClick={load}><RefreshCw size={15} aria-hidden /> Refresh</button>
+            <RefreshButton onRefresh={load} />
             {canManage(role) && <Link to="/bulk?tab=customers" className="btn-outline"><FileSpreadsheet size={15} aria-hidden /> Import</Link>}
             {canManage(role) && <button type="button" className="btn-primary" onClick={() => navigate('/accounts/customers/new')}><Plus size={16} aria-hidden /> New customer</button>}
           </>

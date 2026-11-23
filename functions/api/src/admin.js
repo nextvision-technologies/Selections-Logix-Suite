@@ -48,6 +48,10 @@ export async function deleteBranch(ctx, me, { id }) {
   for (const table of [T.profiles, T.riders, T.customers]) {
     if (await countRows(db, table, [Query.equal('branch_id', id)])) throw new ApiError('Branch is still in use. Set it Inactive instead.');
   }
+  // Shipments keep their origin / destination branch for reports and routing.
+  for (const col of ['origin_branch_id', 'dest_branch_id']) {
+    if (await countRows(db, T.shipments, [Query.equal(col, id)])) throw new ApiError('Branch has shipments. Set it Inactive instead.');
+  }
   await deleteRow(db, T.branches, id);
   await teams.delete({ teamId: id }).catch(() => {});
   return { ok: true };
