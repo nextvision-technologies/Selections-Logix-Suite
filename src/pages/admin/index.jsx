@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Pencil, Plug, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { Clock, Pencil, Plug, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import DataTable from '../../components/tables/DataTable.jsx';
 import { Card, PageHeader, StatusBadge, Tabs, Toggle } from '../../components/ui/index.jsx';
 import { FormModal } from '../../components/forms/EntityForm.jsx';
@@ -228,29 +228,28 @@ export function SystemSettings() {
   );
 }
 
+// None of these services is wired up yet, so each one is labelled "Coming soon" instead of offering a Connect button.
 export function Integrations() {
-  const { integrations, updateItem } = useData();
+  const integrations = useData((s) => s.integrations);
   const groups = groupBy(integrations, (i) => i.group);
-  const toggle = async (i) => {
-    const connected = i.status === 'Connected';
-    if (connected && !(await confirm({ title: `Disconnect ${i.name}?`, message: 'It will stop syncing until it is connected again.', confirmLabel: 'Disconnect' }))) return;
-    const status = connected ? 'Disconnected' : 'Connected';
-    updateItem('integrations', i.id, { status }, 'Integration', `${i.name} ${status}`);
-    toast.success(`${i.name} ${status.toLowerCase()} (not live yet)`);
-  };
   return (
     <div>
-      <PageHeader title="Integrations" subtitle="Connect and disconnect screens only. Nothing calls a live service yet." />
+      <PageHeader title="Integrations" subtitle="Courier, payment, messaging and maps services planned for the platform." />
+      <div className="mb-4 flex items-start gap-3 rounded-2xl border border-primary/40 bg-primary-light/60 px-4 py-3 text-sm">
+        <Clock size={18} className="mt-0.5 shrink-0 text-primary-dark" aria-hidden />
+        <p><b>Coming soon.</b> These integrations are being built. They will be available to connect here once they go live.</p>
+      </div>
       <div className="grid items-start gap-4 lg:grid-cols-2">
         {Object.entries(groups).map(([group, list]) => (
           <Card key={group} title={group} bodyClass="">
             <ul className="divide-y divide-line">
               {list.map((i) => (
-                <li key={i.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                  <span className="rounded-lg bg-primary-light p-2 text-primary-dark"><Plug size={16} aria-hidden /></span>
-                  <span className="min-w-0 flex-1"><span className="block text-sm font-medium">{i.name}</span><span className="block text-xs text-ink-muted">{i.desc}</span></span>
-                  <StatusBadge status={i.status} />
-                  <button type="button" className={i.status === 'Connected' ? 'btn-outline btn-sm' : 'btn-primary btn-sm'} onClick={() => toggle(i)}>{i.status === 'Connected' ? 'Disconnect' : 'Connect'}</button>
+                <li key={i.id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
+                  <span className="rounded-xl bg-slate-100 p-2.5 text-slate-500"><Plug size={16} aria-hidden /></span>
+                  <span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{i.name}</span><span className="block text-xs text-ink-muted">{i.desc}</span></span>
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-primary/50 bg-primary-light px-2.5 py-1 text-xs font-semibold text-primary-dark">
+                    <Clock size={12} aria-hidden /> Coming soon
+                  </span>
                 </li>
               ))}
             </ul>

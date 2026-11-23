@@ -4,7 +4,7 @@
 import { lazy } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import {
-  Banknote, Bell, Bike, Building2, FileCog, HandCoins, History, LayoutDashboard, PackagePlus, PackageSearch, Plug, Printer, Scale, ScanLine, Settings, ShieldAlert, Store, Tags, Truck, Users, Wallet, Waypoints,
+  Banknote, Bell, Bike, Building2, Contact, FileCog, FileSpreadsheet, HandCoins, History, LayoutDashboard, PackagePlus, PackageSearch, Plug, Printer, Scale, ScanLine, Settings, ShieldAlert, Store, Tags, Truck, Users, Wallet, Waypoints,
 } from 'lucide-react';
 import { useAuth } from '../store/authStore.js';
 import { useCan } from '../hooks/useApp.js';
@@ -42,6 +42,7 @@ export const routeTable = [
   { path: '/shipments', element: named(ship, 'ShipmentList'), module: 'shipments', nav: { group: 'Operations', label: 'Shipments', icon: PackageSearch } },
   { path: '/shipments/scan', element: named(shipOps, 'ParcelScan'), module: 'shipments', roles: NOT_MERCHANT, nav: { group: 'Operations', label: 'Parcel Scan', icon: ScanLine }, title: 'Parcel Scan' },
   { path: '/shipments/:id', element: named(() => import('../pages/shipments/ShipmentDetail.jsx'), 'ShipmentDetail'), module: 'shipments' },
+  { path: '/bulk', element: named(() => import('../pages/bulk/index.jsx'), 'BulkImport'), module: 'shipments', roles: ['super_admin', 'branch_manager', 'merchant', 'warehouse'], nav: { group: 'Operations', label: 'Bulk Import', icon: FileSpreadsheet }, title: 'Bulk Import' },
   { path: '/documents', element: named(() => import('../pages/documents/index.jsx'), 'DocumentCenter'), module: 'documents', nav: { group: 'Operations', label: 'Labels & Documents', icon: Printer } },
 
   { path: '/branches', element: named(branch, 'BranchList'), module: 'branches', nav: { group: 'Network', label: 'Branches', icon: Building2 } },
@@ -51,6 +52,7 @@ export const routeTable = [
   { path: '/accounts/customers/new', element: named(() => import('../pages/accounts/CustomerForm.jsx'), 'CustomerForm'), module: 'customers', roles: CUSTOMER_EDITORS, title: 'New Customer' },
   { path: '/accounts/customers/:id', element: named(acctCust, 'CustomerAccountView'), module: 'customers' },
   { path: '/accounts/customers/:id/edit', element: named(() => import('../pages/accounts/CustomerForm.jsx'), 'CustomerForm'), module: 'customers', roles: CUSTOMER_EDITORS },
+  { path: '/accounts/receivers', element: named(() => import('../pages/accounts/Receivers.jsx'), 'ReceiverList'), module: 'customers', roles: CUSTOMER_EDITORS, nav: { group: 'Network', label: 'Receivers', icon: Contact }, title: 'Receivers' },
   { path: '/customers', element: named(cust, 'CustomerList'), module: 'customers', title: 'Customers' },
   { path: '/customers/:id', element: named(cust, 'CustomerDetail'), module: 'customers' },
   { path: '/riders', element: named(rider, 'RiderList'), module: 'riders', nav: { group: 'Network', label: 'Riders', icon: Bike } },
@@ -60,6 +62,7 @@ export const routeTable = [
   { path: '/rider-app', element: named(riderApp, 'RiderApp'), module: 'riderapp', nav: { group: 'Rider App', label: "Today's Run", icon: Truck } },
 
   { path: '/portal/account', element: named(acctCust, 'MyAccount'), module: 'portal', roles: ['merchant'], nav: { group: 'Merchant Portal', label: 'My Account', icon: Store }, title: 'My Account' },
+  { path: '/portal/receivers', element: named(() => import('../pages/accounts/Receivers.jsx'), 'MyReceivers'), module: 'portal', roles: ['merchant'], nav: { group: 'Merchant Portal', label: 'My Receivers', icon: Contact }, title: 'My Receivers' },
   { path: '/portal/cod', element: named(portal, 'PortalCod'), module: 'portal', nav: { group: 'Merchant Portal', label: 'COD Ledger', icon: Wallet }, title: 'COD Ledger' },
   { path: '/portal/payouts', element: named(portal, 'PortalPayouts'), module: 'portal', nav: { group: 'Merchant Portal', label: 'Payouts', icon: HandCoins }, title: 'Payouts' },
 

@@ -2,7 +2,7 @@
 // merchant's own "My Account" page.
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { BadgeCheck, Download, Eye, FileText, KeyRound, Pencil, Plus, RefreshCw, Trash2, Users } from 'lucide-react';
+import { BadgeCheck, Download, Eye, FileSpreadsheet, FileText, KeyRound, Pencil, Plus, RefreshCw, Trash2, Users } from 'lucide-react';
 import DataTable from '../../components/tables/DataTable.jsx';
 import { Card, EmptyState, KV, PageHeader, PageSkeleton, StatusBadge } from '../../components/ui/index.jsx';
 import { FormModal } from '../../components/forms/EntityForm.jsx';
@@ -12,6 +12,7 @@ import { confirm, toast } from '../../store/uiStore.js';
 import { fmtDate, fmtDateTime } from '../../utils/format.js';
 import { syncFromDb } from '../../hooks/useDbSync.js';
 import { PAYMENT_TERMS, normalizePlans, paymentTermLabel, paymentTermsFor, shippingPlanLabel, SHIPPING_PLANS } from '../../utils/pricing.js';
+import { CustomerReceivers } from './Receivers.jsx';
 import { createUser, deleteCustomer, docDownloadUrl, getCustomer, listCustomers, setCustomerStatus } from '../../lib/api.js';
 
 const count = (x) => (Array.isArray(x) ? x.length : Number(x) || 0);
@@ -53,6 +54,7 @@ export function CustomerAccounts() {
         actions={(
           <>
             <button type="button" className="btn-outline" onClick={load}><RefreshCw size={15} aria-hidden /> Refresh</button>
+            {canManage(role) && <Link to="/bulk?tab=customers" className="btn-outline"><FileSpreadsheet size={15} aria-hidden /> Import</Link>}
             {canManage(role) && <button type="button" className="btn-primary" onClick={() => navigate('/accounts/customers/new')}><Plus size={16} aria-hidden /> New customer</button>}
           </>
         )}
@@ -195,6 +197,8 @@ export function CustomerAccountView({ customerId }) {
           </Card>
 
           <Card title={`Documents (${c.documents.length})`}><DocList docs={c.documents} /></Card>
+
+          {manage && <CustomerReceivers customerId={c.id} />}
         </div>
 
         <div className="space-y-4">

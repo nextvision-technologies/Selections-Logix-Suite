@@ -17,42 +17,53 @@ export function StatusBadge({ status, className }) {
   );
 }
 
+// Icon tile and corner glow per tone. Danger is kept for figures that need attention.
+const TONES = {
+  default: ['bg-primary-light text-primary-dark', 'bg-primary'],
+  blue: ['bg-blue-100 text-blue-800', 'bg-blue-600'],
+  green: ['bg-emerald-100 text-emerald-800', 'bg-emerald-600'],
+  violet: ['bg-violet-100 text-violet-700', 'bg-violet-500'],
+  danger: ['bg-danger-light text-danger', 'bg-danger'],
+};
+
 export function StatCard({ label, value, hint, icon: Icon, tone = 'default', onClick }) {
   const Comp = onClick ? 'button' : 'div';
+  const [tile, glow] = TONES[tone] || TONES.default;
   return (
-    <Comp onClick={onClick} className={clsx('card block w-full p-4 text-start', onClick && 'transition hover:border-primary-hover')}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-medium text-ink-muted">{label}</p>
+    <Comp type={onClick ? 'button' : undefined} onClick={onClick} className={clsx('card group relative block h-full w-full overflow-hidden p-4 text-start sm:p-5', onClick && 'card-hover')}>
+      <span aria-hidden className={clsx('pointer-events-none absolute -end-8 -top-8 h-24 w-24 rounded-full opacity-[.12] blur-2xl transition-opacity group-hover:opacity-25', glow)} />
+      <div className="relative flex items-start justify-between gap-3">
+        <p className="text-[13px] font-medium leading-5 text-ink-muted">{label}</p>
         {Icon && (
-          <span className={clsx('rounded-lg p-1.5', tone === 'danger' ? 'bg-danger-light text-danger' : 'bg-primary-light text-primary-dark')}>
-            <Icon size={16} aria-hidden />
+          <span className={clsx('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110', tile)}>
+            <Icon size={19} aria-hidden />
           </span>
         )}
       </div>
-      <p className={clsx('mt-1 whitespace-nowrap text-xl font-bold tracking-tight', tone === 'danger' && 'text-danger')}>{value}</p>
-      {hint && <p className="mt-0.5 text-xs text-ink-muted">{hint}</p>}
+      <p className={clsx('relative mt-1 whitespace-nowrap font-brand text-[26px] font-bold leading-tight tracking-tight tabular', tone === 'danger' && 'text-danger')}>{value}</p>
+      {hint && <p className="relative mt-1 text-xs text-ink-muted">{hint}</p>}
     </Comp>
   );
 }
 
 export function PageHeader({ title, subtitle, actions }) {
   return (
-    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+    <div className="mb-5 flex animate-fade-up flex-wrap items-end justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="text-xl font-bold">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-sm text-ink-muted"><bdi>{subtitle}</bdi></p>}
+        <h1 className="text-2xl text-ink sm:text-[28px]">{title}</h1>
+        {subtitle && <p className="mt-1 text-sm text-ink-muted"><bdi>{subtitle}</bdi></p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   );
 }
 
-export function Card({ title, actions, children, className, bodyClass = 'p-4' }) {
+export function Card({ title, actions, children, className, bodyClass = 'p-4 sm:p-5' }) {
   return (
     <section className={clsx('card', className)}>
       {(title || actions) && (
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3">
-          <h2 className="text-sm font-semibold">{title}</h2>
+        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line/80 px-4 py-3.5 sm:px-5">
+          <h2 className="text-[15px] text-ink">{title}</h2>
           {actions}
         </header>
       )}
@@ -71,7 +82,7 @@ export function KV({ label, children }) {
 }
 
 export function Skeleton({ className }) {
-  return <div className={clsx('animate-pulse rounded-md bg-gray-200', className)} />;
+  return <div className={clsx('animate-pulse rounded-lg bg-slate-200/80', className)} />;
 }
 
 export function PageSkeleton() {
@@ -79,18 +90,20 @@ export function PageSkeleton() {
     <div className="space-y-4" role="status" aria-label="Loading">
       <Skeleton className="h-7 w-56" />
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+        {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-28 rounded-2xl" />)}
       </div>
-      <Skeleton className="h-72 rounded-xl" />
+      <Skeleton className="h-72 rounded-2xl" />
     </div>
   );
 }
 
 export function EmptyState({ icon: Icon = Inbox, title = 'Nothing here yet', message, action }) {
   return (
-    <div className="flex flex-col items-center justify-center px-4 py-12 text-center">
-      <span className="mb-3 rounded-full bg-primary-light p-3 text-primary-dark"><Icon size={22} aria-hidden /></span>
-      <p className="font-medium">{title}</p>
+    <div className="flex animate-fade-up flex-col items-center justify-center px-4 py-12 text-center">
+      <span className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-light to-amber-100 text-primary-dark shadow-sm ring-8 ring-primary-light/40">
+        <Icon size={26} aria-hidden />
+      </span>
+      <p className="font-brand text-base font-bold">{title}</p>
       {message && <p className="mt-1 max-w-sm text-sm text-ink-muted">{message}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
@@ -137,14 +150,14 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
   const titleId = useId();
   if (!open) return null;
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} className={clsx('flex max-h-[92vh] w-full flex-col rounded-t-xl bg-white shadow-pop outline-none sm:rounded-xl', SIZES[size])}>
-        <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
-          <h2 id={titleId} className="text-base font-semibold">{title}</h2>
+    <div className="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-[#070D1F]/50 backdrop-blur-[2px] sm:items-center sm:p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
+      <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} className={clsx('flex max-h-[92vh] w-full animate-scale-in flex-col rounded-t-2xl bg-white shadow-pop outline-none sm:rounded-2xl', SIZES[size])}>
+        <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+          <h2 id={titleId} className="text-lg">{title}</h2>
           <button type="button" onClick={onClose} className="btn-ghost btn-sm" aria-label="Close"><X size={16} /></button>
         </header>
         <div className="scroll-thin flex-1 overflow-y-auto px-5 py-4">{children}</div>
-        {footer && <footer className="flex flex-wrap justify-end gap-2 border-t border-line px-5 py-3">{footer}</footer>}
+        {footer && <footer className="flex flex-wrap justify-end gap-2 rounded-b-2xl border-t border-line bg-slate-50/70 px-5 py-3.5">{footer}</footer>}
       </div>
     </div>,
     document.body,
@@ -156,10 +169,10 @@ export function Drawer({ open, onClose, title, children, footer, width = 'max-w-
   const titleId = useId();
   if (!open) return null;
   return createPortal(
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} className={clsx('flex h-full w-full flex-col bg-white shadow-pop outline-none', width)}>
-        <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-3.5">
-          <h2 id={titleId} className="text-base font-semibold">{title}</h2>
+    <div className="fixed inset-0 z-50 flex animate-fade-in justify-end bg-[#070D1F]/50 backdrop-blur-[2px]" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
+      <div ref={ref} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby={titleId} className={clsx('flex h-full w-full animate-slide-in flex-col bg-white shadow-pop outline-none', width)}>
+        <header className="flex items-center justify-between gap-3 border-b border-line px-5 py-4">
+          <h2 id={titleId} className="text-lg">{title}</h2>
           <button type="button" onClick={onClose} className="btn-ghost btn-sm" aria-label="Close"><X size={16} /></button>
         </header>
         <div className="scroll-thin flex-1 overflow-y-auto px-5 py-4">{children}</div>
@@ -198,9 +211,9 @@ export function ConfirmHost() {
 }
 
 const TOAST_STYLE = {
-  success: { icon: CheckCircle2, cls: 'border-primary bg-primary-light text-ink' },
-  error: { icon: XCircle, cls: 'border-danger bg-danger-light text-danger-dark' },
-  info: { icon: Info, cls: 'border-line bg-white text-ink' },
+  success: { icon: CheckCircle2, cls: 'border-emerald-600/30 bg-white text-ink [&>svg:first-child]:text-emerald-600' },
+  error: { icon: XCircle, cls: 'border-danger/30 bg-white text-danger-dark [&>svg:first-child]:text-danger' },
+  info: { icon: Info, cls: 'border-line bg-white text-ink [&>svg:first-child]:text-blue-600' },
 };
 
 export function ToastHost() {
@@ -210,7 +223,7 @@ export function ToastHost() {
       {toasts.map((t) => {
         const { icon: Icon, cls } = TOAST_STYLE[t.type];
         return (
-          <div key={t.id} className={clsx('pointer-events-auto flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm shadow-pop', cls)}>
+          <div key={t.id} className={clsx('pointer-events-auto flex animate-scale-in items-start gap-2.5 rounded-xl border px-3.5 py-3 text-sm font-medium shadow-pop', cls)}>
             <Icon size={18} className="mt-0.5 shrink-0" aria-hidden />
             <p className="flex-1">{t.message}</p>
             <button type="button" onClick={() => dismiss(t.id)} aria-label="Dismiss"><X size={14} /></button>
@@ -240,10 +253,13 @@ export function Tabs({ tabs, value, onChange, className }) {
           tabIndex={value === tab.value ? 0 : -1}
           onKeyDown={(e) => onKey(e, i)}
           onClick={() => onChange(tab.value)}
-          className={clsx('-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors', value === tab.value ? 'border-primary-hover text-ink' : 'border-transparent text-ink-muted hover:text-ink')}
+          className={clsx(
+            '-mb-px whitespace-nowrap rounded-t-xl border-b-[3px] px-4 py-2.5 text-sm font-semibold transition-colors',
+            value === tab.value ? 'border-primary-hover bg-primary-light/70 text-ink' : 'border-transparent text-slate-500 hover:border-slate-300 hover:bg-slate-100/70 hover:text-ink',
+          )}
         >
           {tab.label}
-          {tab.count !== undefined && <span className="ms-1.5 rounded-full bg-gray-100 px-1.5 text-xs">{tab.count}</span>}
+          {tab.count !== undefined && <span className={clsx('ms-1.5 rounded-full px-1.5 py-px text-xs', value === tab.value ? 'bg-primary-light text-primary-dark' : 'bg-slate-100')}>{tab.count}</span>}
         </button>
       ))}
     </div>

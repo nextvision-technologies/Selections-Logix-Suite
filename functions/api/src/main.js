@@ -5,7 +5,7 @@
 // Deploy:  npx appwrite push functions --with-variables
 import { ApiError, friendly, loadCaller, sdk } from './context.js';
 import { bootstrap, deleteBranch, saveBranch, savePricing } from './admin.js';
-import { deleteCustomer, deleteDocument, documentLink, registerDocument, saveCustomer, saveReceiver, setCustomerStatus } from './customers.js';
+import { deleteCustomer, deleteDocument, documentLink, registerDocument, saveCustomer, saveReceiver, setCustomerStatus, updateReceiver } from './customers.js';
 import { createUser, setUserPassword, touchLogin, updateUser } from './users.js';
 import {
   addNote, assignRider, changeStatus, createPayout, createShipment, markPayoutPaid, reconcileDeposit, recordDeposit, setPayoutStatus, track,
@@ -28,6 +28,7 @@ const ACTIONS = {
   'documents.delete': deleteDocument,
   'documents.link': documentLink,
   'receivers.save': saveReceiver,
+  'receivers.update': updateReceiver,
   'shipments.create': createShipment,
   'shipments.status': changeStatus,
   'shipments.assign': assignRider,

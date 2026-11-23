@@ -13,15 +13,22 @@ import { CURRENCIES, fmtTimeAgo } from '../../utils/format.js';
 import { ErrorBoundary } from './Fallbacks.jsx';
 import { PageSkeleton } from '../ui/index.jsx';
 
-export function Logo({ compact, className }) {
+export function Logo({ compact, className, dark }) {
   return (
     <span className={clsx('flex items-center gap-2.5', className)}>
-      <svg viewBox="0 0 32 32" className="h-8 w-8 shrink-0" aria-hidden>
-        <rect width="32" height="32" rx="8" fill="#DC2626" />
+      <svg viewBox="0 0 32 32" className="h-9 w-9 shrink-0 drop-shadow-sm" aria-hidden>
+        <defs>
+          <linearGradient id="logo-bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#EF4444" /><stop offset="1" stopColor="#B91C1C" /></linearGradient>
+        </defs>
+        <rect width="32" height="32" rx="9" fill="url(#logo-bg)" />
         <path d="M8 11l8-4 8 4v10l-8 4-8-4z" fill="#FACC15" />
         <path d="M8 11l8 4 8-4M16 15v10" stroke="#111827" strokeWidth="1.5" fill="none" />
       </svg>
-      {!compact && <span className="text-sm font-bold leading-tight">Selections<br /><span className="font-semibold text-ink-muted">Logix Suite</span></span>}
+      {!compact && (
+        <span className={clsx('font-brand text-[15px] font-extrabold leading-tight', dark ? 'text-white' : 'text-ink')}>
+          Selections<br /><span className={clsx('text-xs font-semibold', dark ? 'text-slate-400' : 'text-ink-muted')}>Logix Suite</span>
+        </span>
+      )}
     </span>
   );
 }
@@ -36,25 +43,26 @@ function Sidebar({ open, onClose }) {
   const collapsed = collapsedPref && !open;
   return (
     <>
-      {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} aria-hidden />}
+      {open && <div className="fixed inset-0 z-30 animate-fade-in bg-[#070D1F]/50 backdrop-blur-[2px] lg:hidden" onClick={onClose} aria-hidden />}
       <aside
         className={clsx(
-          'fixed inset-y-0 start-0 z-40 flex shrink-0 flex-col border-e border-line bg-white transition-all lg:sticky lg:top-0 lg:h-screen',
-          collapsed ? 'lg:w-[68px]' : 'lg:w-60',
-          'w-64',
+          'fixed inset-y-0 start-0 z-40 flex shrink-0 flex-col bg-gradient-to-b from-[#0B1530] via-[#0B1530] to-[#070D1F] text-slate-300 shadow-2xl transition-all duration-300 lg:sticky lg:top-0 lg:h-screen lg:shadow-none',
+          collapsed ? 'lg:w-[76px]' : 'lg:w-64',
+          'w-72',
           // Off-canvas only below lg; on desktop the sidebar is always in the page flow.
           !open && 'max-lg:-translate-x-full',
         )}
         aria-label="Main navigation"
       >
-        <div className="flex h-14 items-center justify-between border-b border-line px-3.5">
-          <Link to="/" onClick={onClose}><Logo compact={collapsed} /></Link>
-          <button type="button" className="btn-ghost btn-sm lg:hidden" onClick={onClose} aria-label="Close menu"><X size={16} /></button>
+        <div className={clsx('flex h-16 items-center justify-between px-4', collapsed && 'lg:justify-center lg:px-2')}>
+          <Link to="/" onClick={onClose}><Logo compact={collapsed} dark /></Link>
+          <button type="button" className="rounded-lg p-1.5 text-slate-400 hover:bg-white/10 hover:text-white lg:hidden" onClick={onClose} aria-label="Close menu"><X size={18} /></button>
         </div>
-        <nav className="scroll-thin flex-1 space-y-4 overflow-y-auto px-2 py-3">
+        <nav className="scroll-thin scroll-dark flex-1 space-y-5 overflow-y-auto px-3 pb-4 pt-2">
           {nav.map(({ group, items }) => (
             <div key={group}>
-              {!collapsed && <p className="mb-1 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">{group}</p>}
+              {!collapsed && <p className="mb-1.5 px-3 text-[10.5px] font-semibold uppercase tracking-[.12em] text-slate-500">{group}</p>}
+              {collapsed && <span className="mx-auto mb-2 block h-px w-6 bg-white/10" aria-hidden />}
               <ul className="space-y-0.5">
                 {items.map(({ path, nav: item }) => (
                   <li key={path}>
@@ -64,12 +72,12 @@ function Sidebar({ open, onClose }) {
                       onClick={onClose}
                       title={collapsed ? item.label : undefined}
                       className={({ isActive }) => clsx(
-                        'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors',
+                        'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition duration-150',
                         collapsed && 'justify-center',
-                        isActive ? 'bg-primary text-ink' : 'text-gray-600 hover:bg-primary-light hover:text-ink',
+                        isActive ? 'bg-primary font-semibold text-ink shadow-glow' : 'text-slate-300 hover:bg-white/[.06] hover:text-white',
                       )}
                     >
-                      <item.icon size={17} className="shrink-0" aria-hidden />
+                      <item.icon size={18} className="shrink-0 transition-transform group-hover:scale-110" aria-hidden />
                       {!collapsed && <span className="truncate">{item.label}</span>}
                       {collapsed && <span className="sr-only">{item.label}</span>}
                     </NavLink>
@@ -79,7 +87,7 @@ function Sidebar({ open, onClose }) {
             </div>
           ))}
         </nav>
-        <button type="button" onClick={toggle} className="hidden items-center gap-2 border-t border-line px-4 py-3 text-xs text-ink-muted hover:text-ink lg:flex" aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+        <button type="button" onClick={toggle} className={clsx('mx-3 mb-3 hidden items-center gap-2 rounded-xl border border-white/10 px-3 py-2.5 text-xs font-medium text-slate-400 transition hover:bg-white/[.06] hover:text-white lg:flex', collapsed && 'justify-center')} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           {collapsed ? <PanelLeftOpen size={16} /> : <><PanelLeftClose size={16} /> Collapse</>}
         </button>
       </aside>
@@ -141,8 +149,8 @@ function GlobalSearch() {
   };
 
   return (
-    <div className="relative min-w-0 flex-1 sm:max-w-sm" ref={ref}>
-      <Search size={15} className="absolute start-2.5 top-2.5 text-gray-400" aria-hidden />
+    <div className="relative min-w-0 flex-1 sm:max-w-md" ref={ref}>
+      <Search size={16} className="absolute start-3.5 top-3 text-slate-400" aria-hidden />
       <input
         ref={inputRef}
         value={q}
@@ -151,13 +159,14 @@ function GlobalSearch() {
         onKeyDown={onKeyDown}
         placeholder="Search AWB, customer, rider..."
         aria-label="Global search"
-        className="input !py-1.5 !ps-8"
+        className="input !rounded-full !border-transparent !bg-slate-100/80 !ps-10 !shadow-none hover:!bg-slate-100 focus:!border-gray-300 focus:!bg-white"
       />
+      <kbd className="pointer-events-none absolute end-3 top-2.5 hidden rounded-md border border-line bg-white px-1.5 py-0.5 text-[10px] font-semibold text-ink-muted md:block">Ctrl K</kbd>
       {open && q.trim().length >= 2 && (
-        <div className="absolute z-30 mt-1 max-h-96 w-full min-w-[280px] overflow-y-auto rounded-lg border border-line bg-white p-1 shadow-pop">
+        <div className="absolute z-30 mt-2 max-h-96 w-full min-w-[280px] animate-scale-in overflow-y-auto rounded-2xl border border-line bg-white p-1.5 shadow-pop">
           {!results.length && <p className="px-3 py-4 text-center text-sm text-ink-muted">No results</p>}
           {results.map((r, i) => (
-            <button key={`${r.type}-${r.key}`} type="button" onMouseEnter={() => setCursor(i)} onClick={() => go(r)} className={clsx('flex w-full items-center justify-between gap-3 rounded px-3 py-2 text-start', i === cursor && 'bg-primary-light')}>
+            <button key={`${r.type}-${r.key}`} type="button" onMouseEnter={() => setCursor(i)} onClick={() => go(r)} className={clsx('flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-start', i === cursor && 'bg-primary-light')}>
               <span className="min-w-0">
                 <span className="block truncate text-sm font-medium">{r.label}</span>
                 <span className="block truncate text-xs text-ink-muted">{r.sub}</span>
@@ -182,12 +191,12 @@ function NotificationBell() {
   const unread = notifications.filter((n) => !n.read).length;
   return (
     <div className="relative" ref={ref}>
-      <button type="button" className="btn-ghost btn-sm relative !p-2" onClick={() => setOpen((o) => !o)} aria-label={`Notifications: ${unread}`} aria-expanded={open}>
-        <Bell size={18} aria-hidden />
-        {unread > 0 && <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white">{unread}</span>}
+      <button type="button" className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 hover:text-ink" onClick={() => setOpen((o) => !o)} aria-label={`Notifications: ${unread}`} aria-expanded={open}>
+        <Bell size={19} aria-hidden />
+        {unread > 0 && <span className="absolute end-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-danger px-1 text-[10px] font-bold text-white ring-2 ring-white">{unread}</span>}
       </button>
       {open && (
-        <div className="fixed inset-x-3 top-14 z-30 rounded-xl border border-line bg-white shadow-pop sm:absolute sm:inset-x-auto sm:end-0 sm:top-auto sm:mt-1 sm:w-80">
+        <div className="fixed inset-x-3 top-16 z-30 animate-scale-in overflow-hidden rounded-2xl border border-line bg-white shadow-pop sm:absolute sm:inset-x-auto sm:end-0 sm:top-auto sm:mt-2 sm:w-96">
           <div className="flex items-center justify-between border-b border-line px-3 py-2">
             <p className="text-sm font-semibold">Notifications</p>
             <button type="button" className="text-xs text-ink-muted hover:text-ink" onClick={() => setValue('notifications', notifications.map((n) => ({ ...n, read: true })), 'Notification', 'Marked all read')}>Mark all read</button>
@@ -230,15 +239,15 @@ function ProfileMenu() {
   const ref = useOutside(() => setOpen(false));
   return (
     <div className="relative" ref={ref}>
-      <button type="button" className="flex items-center gap-2 rounded-lg p-1 hover:bg-gray-100" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label="Profile">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold">{user.name.split(' ').map((p) => p[0]).slice(0, 2).join('')}</span>
+      <button type="button" className="flex items-center gap-2.5 rounded-full p-1 pe-1 transition hover:bg-slate-100 xl:pe-3" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-label="Profile">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-amber-500 text-xs font-bold text-ink shadow-sm ring-2 ring-white">{user.name.split(' ').map((p) => p[0]).slice(0, 2).join('')}</span>
         <span className="hidden text-start xl:block">
           <span className="block text-xs font-semibold leading-tight">{user.name}</span>
           <span className="block text-[11px] leading-tight text-ink-muted">{ROLE_LABELS[user.role]}</span>
         </span>
       </button>
       {open && (
-        <div className="absolute end-0 z-30 mt-1 w-60 rounded-xl border border-line bg-white p-1.5 shadow-pop">
+        <div className="absolute end-0 z-30 mt-2 w-64 animate-scale-in rounded-2xl border border-line bg-white p-1.5 shadow-pop">
           <div className="flex items-center gap-2 px-2.5 py-2">
             <UserCircle2 size={18} className="text-ink-muted" aria-hidden />
             <div className="min-w-0">
@@ -273,8 +282,8 @@ function Topbar({ onMenu }) {
   const activeBranch = useActiveBranch();
   const showBranch = !['merchant', 'rider'].includes(user.role);
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center gap-2 border-b border-line bg-white px-3 sm:px-4 print:hidden">
-      <button type="button" className="btn-ghost btn-sm !p-2 lg:hidden" onClick={onMenu} aria-label="Open menu"><Menu size={18} /></button>
+    <header className="sticky top-0 z-20 flex h-16 items-center gap-2 border-b border-line/70 bg-white/75 px-3 backdrop-blur-xl sm:gap-3 sm:px-6 print:hidden">
+      <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 lg:hidden" onClick={onMenu} aria-label="Open menu"><Menu size={20} /></button>
       <GlobalSearch />
       <div className="ms-auto flex items-center gap-1.5">
         {showBranch && (
@@ -308,7 +317,7 @@ function Breadcrumbs() {
     return { path, label: labelForPath(path) || (/\d/.test(part) || part === part.toUpperCase() ? part : part.replace(/-/g, ' ').replace(/^\w/, (c) => c.toUpperCase())), hasRoute: !!labelForPath(path) };
   });
   return (
-    <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1 text-xs text-ink-muted print:hidden">
+    <nav aria-label="Breadcrumb" className="mb-3 flex flex-wrap items-center gap-1 text-xs font-medium text-ink-muted print:hidden">
       <Link to="/" className="hover:text-ink">Home</Link>
       {crumbs.map((c, i) => (
         <span key={c.path} className="flex items-center gap-1">
@@ -331,7 +340,7 @@ export default function AppLayout() {
       <Sidebar open={mobileOpen} onClose={() => setMobileOpen(false)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar onMenu={() => setMobileOpen(true)} />
-        <main id="main" className="min-w-0 flex-1 p-3 sm:p-5">
+        <main id="main" className="mx-auto w-full min-w-0 max-w-[1600px] flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8">
           <Breadcrumbs />
           {/* Keyed by path so a crashed screen recovers when the user navigates away. */}
           <ErrorBoundary key={pathname}>

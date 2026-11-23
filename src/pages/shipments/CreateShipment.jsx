@@ -4,12 +4,12 @@
 // booking is kept as a draft in localStorage.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { findReceiver, findReceiverByCnic, saveReceiver } from '../../lib/api.js';
+import { findReceiver, findReceiverByCnic, listReceivers, saveReceiver } from '../../lib/api.js';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
-  AlertTriangle, Banknote, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Copy, CreditCard, Info, Pencil, Plus, Printer, Smartphone, Trash2, UserCheck, Wallet,
+  AlertTriangle, Banknote, Loader2, CheckCircle2, ChevronLeft, ChevronRight, Copy, CreditCard, Info, Pencil, Plus, Printer, Smartphone, Trash2, UserCheck, UserPlus, Wallet,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { Card, PageHeader, Stepper } from '../../components/ui/index.jsx';
@@ -121,6 +121,10 @@ function crossRules(v, { crossBorder, due, duePKR, credit, currency, saved, rena
   if (v.receiver.cnic && !CNIC_PATTERN.test(v.receiver.cnic)) add(1, 'receiver.cnic', 'Enter a Pakistani CNIC as 35202-1234567-1 (13 digits)');
   if (v.receiver.zone && !(ZONES[v.receiver.city] || []).some((z) => z.value === v.receiver.zone)) add(1, 'receiver.zone', 'Choose a zone in this city');
   if (v.receiver.altPhone && phoneKey(v.receiver.altPhone) === phoneKey(v.receiver.phone)) add(1, 'receiver.altPhone', 'Second number must be different from the first');
+  // Sender and receiver are different people, so they can never share a number.
+  const senderKey = phoneKey(v.sender.phone);
+  if (senderKey && phoneKey(v.receiver.phone) === senderKey) add(1, 'receiver.phone', 'Receiver phone cannot be the same as the sender phone');
+  if (senderKey && v.receiver.altPhone && phoneKey(v.receiver.altPhone) === senderKey) add(1, 'receiver.altPhone', 'Second number cannot be the same as the sender phone');
   if (saved && !renameOk && v.receiver.name && sameName(v.receiver.name, saved.name) === false) {
     add(1, 'receiver.name', `${saved.phone} is already saved for "${saved.name}". Use the saved details, or choose "Update saved name".`);
   }
@@ -504,6 +508,29 @@ export function CreateShipment() {
     // eslint-disable-next-line
   }, [receiverKey, merchantId]);
 
+  // Phone suggestions: this customer's saved receivers, loaded once and matched as the digits are typed.
+  const [book, setBook] = useState([]);
+  useEffect(() => {
+    if (!merchantId) { setBook([]); return undefined; }
+    let live = true;
+    listReceivers(merchantId).then((rows) => { if (live) setBook(rows); }).catch(() => { if (live) setBook([]); });
+    return () => { live = false; };
+  }, [merchantId, created]);
+  // 0300 1234567, +92 300 1234567 and 923001234567 all search as "3001234567".
+  const needle = receiverPhone.replace(/\D/g, '').replace(/^(0092|92|0)/, '');
+  const suggestions = needle.length >= 3 && !(saved && filledFrom.current === saved.id)
+    ? book
+      .filter((r) => (r.phone_key || '').includes(needle))
+      .sort((a, b) => Number(b.phone_key.startsWith(needle)) - Number(a.phone_key.startsWith(needle)))
+      .slice(0, 6)
+    : [];
+  const pickSuggestion = (rec) => {
+    setValue('receiver.phone', rec.phone, { shouldValidate: true, shouldDirty: true });
+    fillFrom(rec);
+    setSaved(rec);
+    toast.success(`Saved receiver ${rec.name} filled in`);
+  };
+
   // Same CNIC already saved under a different number: warn, do not block (one person can have two numbers).
   const receiverCnic = v.receiver?.cnic || '';
   useEffect(() => {
@@ -735,6 +762,7 @@ export function CreateShipment() {
                     errors={errors}
                     required
                     {...phoneInputProps}
+                    autoComplete="off"
                     format={cleanPhoneInput}
                     hint={lookingUp ? 'Checking saved receivers...' : saved ? `Saved receiver: ${saved.name} (${saved.shipments_count} earlier shipment${saved.shipments_count === 1 ? '' : 's'})` : receiverKey ? 'New receiver: saved when you book' : 'Saved receivers are found by phone'}
                   />
@@ -754,6 +782,27 @@ export function CreateShipment() {
                     Receiver has a second phone number
                   </label>
                 </div>
+                {suggestions.length > 0 && (
+                  <div className="rounded-lg border border-line">
+                    <p className="border-b border-line bg-surface px-3 py-1.5 text-xs font-medium text-ink-muted">Saved receivers matching "{receiverPhone}"</p>
+                    <ul className="divide-y divide-line">
+                      {suggestions.map((r) => (
+                        <li key={r.id}>
+                          <button type="button" className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-0.5 px-3 py-2 text-start text-sm hover:bg-primary-light" onClick={() => pickSuggestion(r)}>
+                            <span className="flex items-center gap-2 font-medium"><UserCheck size={15} aria-hidden /> {r.name}</span>
+                            <span className="tabular-nums">{r.phone}</span>
+                            <span className="w-full truncate text-xs text-ink-muted sm:w-auto">{[r.city, r.zone].filter(Boolean).join(' - ')}{r.shipments_count ? ` · ${r.shipments_count} shipment${r.shipments_count === 1 ? '' : 's'}` : ''}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {needle.length >= 3 && !suggestions.length && !saved && !lookingUp && (
+                  <p className="flex items-center gap-2 rounded-lg bg-surface px-3 py-2 text-sm">
+                    <UserPlus size={16} aria-hidden /> <b>New contact.</b> No saved receiver has this number. Fill in the details below; they are saved when you book.
+                  </p>
+                )}
                 {nameClash && (
                   <div role="alert" className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-danger/40 bg-danger-light px-3 py-2 text-sm text-danger-dark">
                     <span className="flex items-center gap-2"><AlertTriangle size={16} aria-hidden /> This number is already saved for <b>{saved.name}</b>{saved.city ? `, ${saved.city}` : ''}.</span>

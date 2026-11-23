@@ -7,7 +7,7 @@
 import {
   ApiError, ID, LABEL, Query, Role, T, createRow, getRowOrNull, isActive, isSuper, listAll, nextCode, read, updateRow,
 } from './context.js';
-import { assert, checkPhone, nz } from './validate.js';
+import { assert, checkPhone, last10, nz } from './validate.js';
 import { CITY_MAP } from './shared/geo.js';
 import { DEFAULT_RATE_CARD, quote } from './shared/pricing.js';
 import { NEXT_STATUS, STATUS } from './shared/status.js';
@@ -131,6 +131,7 @@ export async function createShipment(ctx, me, { form = {} }) {
   checkPhone(nz(sender.phone));
   checkPhone(nz(receiver.phone));
   assert(nz(receiver.phone), 'Receiver phone is required');
+  checkNotSenderPhone(sender.phone, receiver);
   const weight = Number(form.weight);
   assert(weight > 0 && weight <= 40000, 'Enter a valid weight');
 
@@ -284,20 +285,51 @@ export async function addNote(ctx, me, { id, text }) {
   return { shipment: await saveShipment(ctx, sh) };
 }
 
+/** Sender and receiver are different people, so they can never share a number. */
+function checkNotSenderPhone(senderPhone, receiver) {
+  const key = last10(senderPhone);
+  if (!key) return;
+  assert(last10(receiver.phone) !== key, 'Receiver phone cannot be the same as the sender phone');
+  assert(!nz(receiver.altPhone) || last10(receiver.altPhone) !== key, 'Receiver second phone cannot be the same as the sender phone');
+}
+
 /** patch: { eta } and/or { receiver: { name, phone, address, landmark } } */
 export async function updateShipment(ctx, me, { id, patch = {} }) {
   const sh = await loadShipment(ctx, id);
+  // Only staff edit a booking; merchants cannot change it once it is booked.
   if (!(isSuper(me) || (me.role === 'branch_manager' && inBranch(me, sh)))) throw new ApiError('You cannot edit this shipment.', 403);
   const notes = [];
+  const oldKey = last10(sh.receiver?.phone);
   if (patch.eta) { assert(!Number.isNaN(new Date(patch.eta).getTime()), 'Enter a valid date'); sh.eta = new Date(patch.eta).toISOString(); notes.push(`Rescheduled to ${sh.eta.slice(0, 10)}`); }
   if (patch.receiver) {
     const r = patch.receiver;
     for (const k of ['name', 'phone', 'address', 'landmark', 'altPhone']) if (r[k] !== undefined) sh.receiver[k] = nz(r[k]);
     checkPhone(sh.receiver.phone);
+    checkNotSenderPhone(sh.sender?.phone, sh.receiver);
     notes.push('Receiver details edited');
   }
   sh.activity = [...(sh.activity || []), ...notes.map((text) => ({ at: nowISO(), by: me.full_name || 'User', text }))];
-  return { shipment: await saveShipment(ctx, sh) };
+  const shipment = await saveShipment(ctx, sh);
+  if (patch.receiver) {
+    // The shipment is already saved; a failed address-book update must not undo the edit.
+    try { await syncSavedReceiver(ctx.db, sh, oldKey); } catch (e) { console.error(`Saved receiver not updated for ${sh.awb}: ${e.message}`); }
+  }
+  return { shipment };
+}
+
+/** When staff correct a shipment's receiver, the saved receiver (address book) under the old number follows. */
+async function syncSavedReceiver(db, sh, oldKey) {
+  if (!sh.merchantId || !oldKey) return;
+  const find = async (key) => (await listAll(db, T.receivers, [Query.equal('customer_id', sh.merchantId), Query.equal('phone_key', key), Query.limit(1)]))[0];
+  const row = await find(oldKey);
+  if (!row) return;
+  const r = sh.receiver;
+  const newKey = last10(r.phone);
+  // If the new number is already saved as its own receiver, leave both rows alone rather than duplicate it.
+  if (newKey !== oldKey && await find(newKey)) return;
+  await updateRow(db, T.receivers, row.$id, {
+    phone: r.phone, phone_key: newKey, alt_phone: nz(r.altPhone), name: r.name, address: r.address, landmark: nz(r.landmark),
+  });
 }
 
 /** Public tracking: only what a receiver may see. */

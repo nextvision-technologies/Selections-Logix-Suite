@@ -11,7 +11,7 @@ import { confirm, toast } from '../../store/uiStore.js';
 import { useLookups, useMoney, useScopedShipments } from '../../hooks/useApp.js';
 import { HAPPY_PATH, NEXT_STATUS, STATUS, isDelayed } from '../../utils/status.js';
 import { serviceLabel, PACKAGING, paymentMethodLabel, paymentTypeLabel, productTypeLabel } from '../../utils/pricing.js';
-import { fmtCurrency, fmtDate, fmtDateTime, maskNationalId } from '../../utils/format.js';
+import { fmtCurrency, fmtDate, fmtDateTime, maskNationalId, phoneKey } from '../../utils/format.js';
 import { AssignRiderModal, LabelPrintModal } from './ShipmentList.jsx';
 
 const DOCS = [
@@ -74,7 +74,8 @@ export function ShipmentDetail() {
   const stepIdx = HAPPY_PATH.indexOf(s.status);
   const lastHappy = stepIdx >= 0 ? stepIdx : [...s.events].reverse().map((e) => HAPPY_PATH.indexOf(e.status)).find((i) => i >= 0) ?? 0;
   const off = stepIdx < 0;
-  const editable = s.status === STATUS.BOOKED || (staff && options.length > 0);
+  // Only staff (admin, branch manager) edit a booking; merchants and other roles never see Edit.
+  const editable = staff && (s.status === STATUS.BOOKED || options.length > 0);
   const merchant = lookups.merchant(s.merchantId);
 
   const cancel = async () => {
@@ -267,6 +268,7 @@ export function ShipmentDetail() {
         ]}
         defaultValues={{ ...s.receiver }}
         onSubmit={async ({ name, phone, address }) => {
+          if (phoneKey(phone) === phoneKey(s.sender.phone)) { toast.error('Receiver phone cannot be the same as the sender phone'); return; }
           try { await updateShipment(s.id, { receiver: { name, phone, address } }); toast.success('Shipment updated'); setModal(null); } catch (e) { toast.error(e.message); }
         }}
       />

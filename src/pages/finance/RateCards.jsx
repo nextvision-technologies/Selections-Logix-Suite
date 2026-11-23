@@ -3,7 +3,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import clsx from 'clsx';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { FileSpreadsheet, Pencil, Plus, Trash2 } from 'lucide-react';
 import { Card, PageHeader, Tabs } from '../../components/ui/index.jsx';
 import { FieldError, FormModal } from '../../components/forms/EntityForm.jsx';
 import { useData } from '../../store/dataStore.js';
@@ -159,7 +160,7 @@ export function RateCards() {
 
   return (
     <div>
-      <PageHeader title="Rate Cards" subtitle="Saved in the database and used live by the booking form and bulk import. Existing shipments keep their booked price." />
+      <PageHeader title="Rate Cards" subtitle="Saved in the database and used live by the booking form and bulk import. Existing shipments keep their booked price." actions={canEdit && <Link to="/bulk?tab=rates" className="btn-outline"><FileSpreadsheet size={15} aria-hidden /> Import zone prices</Link>} />
       {!canEdit && <p className="mb-3 rounded-lg bg-primary-light px-3 py-2 text-sm">View only. Prices are changed by the Super Admin.</p>}
       <Tabs value={tab} onChange={setTab} tabs={[{ value: 'zones', label: 'Zones & services' }, { value: 'areas', label: 'City / province rates', count: areaRates.length }, { value: 'slabs', label: 'Weight slabs' }, { value: 'rules', label: 'Fees & surcharges' }, { value: 'overrides', label: 'Merchant overrides', count: merchantOverrides.length }, { value: 'calc', label: 'Calculator' }]} />
       {tab === 'zones' && (

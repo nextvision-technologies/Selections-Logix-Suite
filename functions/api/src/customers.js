@@ -1,6 +1,6 @@
 // Customer accounts with their pickup addresses, contacts, documents and saved receivers.
 import {
-  ApiError, BUCKET, Query, T, canEditCustomer, canViewCustomer, createRow, customerPerms, deleteRow, getRowOrNull, isManagerOf, isSuper, listAll,
+  ApiError, BUCKET, Query, T, canEditCustomer, canViewCustomer, createRow, customerPerms, deleteRow, getRowOrNull, isActive, isManagerOf, isSuper, listAll,
   nextCode, norm, requireSuper, updateRow,
 } from './context.js';
 import { MSG, assert, checkCnic, checkEmail, checkPhone, isBusinessName, isIban, isNtn, isPersonName, last10, normalizeIban, num, nz } from './validate.js';
@@ -205,11 +205,8 @@ export async function documentLink(ctx, me, { id }) {
 }
 
 // ---------------------------------------------------------------- receivers
-/** Save after a booking: a new number creates a receiver, a known number updates it and counts the shipment. */
-export async function saveReceiver(ctx, me, p) {
-  const { db } = ctx;
-  const c = await loadCustomer(db, p.customer_id);
-  if (!canEditCustomer(me, c)) throw new ApiError('You do not have permission to make this change.', 403);
+/** Checked receiver columns from an app payload (shared by save after booking and edit). */
+function receiverFields(p) {
   const phone = nz(p.phone);
   assert(phone, 'Receiver phone is required');
   checkPhone(phone);
@@ -223,9 +220,42 @@ export async function saveReceiver(ctx, me, p) {
   assert(city, 'Receiver city is required');
   const altPhone = nz(p.alt_phone);
   checkPhone(altPhone);
+  assert(!altPhone || last10(altPhone) !== key, 'Second number must be different from the first');
   const cnic = nz(p.cnic);
   checkCnic(cnic);
-  const data = { customer_id: c.$id, phone, phone_key: key, alt_phone: altPhone, name, address, landmark: nz(p.landmark), city, zone: nz(p.zone), last_used_at: new Date().toISOString() };
+  const landmark = nz(p.landmark);
+  assert(!landmark || landmark.length <= 120, 'Landmark must be at most 120 characters');
+  return { phone, phone_key: key, alt_phone: altPhone, name, address, landmark, city, zone: nz(p.zone), cnic };
+}
+
+/** Edit a saved receiver: an admin, the customer's branch manager, or the user who first saved it. */
+export async function updateReceiver(ctx, me, p) {
+  const { db } = ctx;
+  const row = await getRowOrNull(db, T.receivers, String(p.id || ''));
+  assert(row, 'Receiver not found', 404);
+  const c = await loadCustomer(db, row.customer_id);
+  const allowed = isActive(me) && (isSuper(me) || isManagerOf(me, c.branch_id) || row.created_by === me.id);
+  if (!allowed) throw new ApiError('You cannot edit this receiver.', 403);
+  const data = receiverFields(p);
+  // One receiver per phone and per CNIC within a customer, so lookups at booking stay unambiguous.
+  const others = async (col, value) => (await listAll(db, T.receivers, [Query.equal('customer_id', c.$id), Query.equal(col, value), Query.limit(2)]))
+    .find((r) => r.$id !== row.$id);
+  const samePhone = await others('phone_key', data.phone_key);
+  assert(!samePhone, `${data.phone} is already saved for ${samePhone?.name}`);
+  const sameCnic = data.cnic ? await others('cnic', data.cnic) : null;
+  assert(!sameCnic, `This CNIC is already saved for ${sameCnic?.name}`);
+  await updateRow(db, T.receivers, row.$id, data, customerPerms(c));
+  return { id: row.$id };
+}
+
+/** Save after a booking: a new number creates a receiver, a known number updates it and counts the shipment. */
+export async function saveReceiver(ctx, me, p) {
+  const { db } = ctx;
+  const c = await loadCustomer(db, p.customer_id);
+  if (!canEditCustomer(me, c)) throw new ApiError('You do not have permission to make this change.', 403);
+  const { cnic, ...fields } = receiverFields(p);
+  const key = fields.phone_key;
+  const data = { customer_id: c.$id, ...fields, last_used_at: new Date().toISOString() };
 
   const existing = (await listAll(db, T.receivers, [Query.equal('customer_id', c.$id), Query.equal('phone_key', key), Query.limit(1)]))[0];
   if (existing) {

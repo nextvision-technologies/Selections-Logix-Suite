@@ -23,10 +23,10 @@ export function CodDashboard() {
   const byStatus = (st) => sum(txns.filter((t) => t.status === st), (t) => toPKR(t.amount, t.currency));
   const collected = sum(txns, (t) => toPKR(t.amount, t.currency));
   const pipeline = [
-    { name: 'With riders', value: byStatus('Collected'), color: CHART.red },
-    { name: 'Deposited', value: byStatus('Deposited'), color: CHART.slate },
-    { name: 'Reconciled', value: byStatus('Reconciled'), color: CHART.brown },
-    { name: 'Paid out', value: byStatus('Paid'), color: CHART.yellow },
+    { name: 'With riders', value: byStatus('Collected'), color: CHART.orange },
+    { name: 'Deposited', value: byStatus('Deposited'), color: CHART.blue },
+    { name: 'Reconciled', value: byStatus('Reconciled'), color: CHART.slate },
+    { name: 'Paid out', value: byStatus('Paid'), color: CHART.aqua },
   ];
   const aging = useMemo(() => agingBuckets(txns.filter((t) => t.status !== 'Paid').map((t) => ({ amount: toPKR(t.amount, t.currency), date: t.collectedAt }))), [txns]);
   return (
@@ -41,7 +41,7 @@ export function CodDashboard() {
       </div>
       <div className="mb-4 grid gap-4 lg:grid-cols-2">
         <Card title="COD pipeline"><DonutChart data={pipeline} format={(v) => money(v)} /></Card>
-        <Card title="Unsettled COD by age"><BarsChart data={aging} format={(v) => compact(v)} series={[{ key: 'value', name: 'Amount', color: CHART.red }]} /></Card>
+        <Card title="Unsettled COD by age"><BarsChart data={aging} format={(v) => compact(v)} series={[{ key: 'value', name: 'Amount', color: CHART.orange }]} /></Card>
       </div>
       <DataTable
         title="COD transactions"

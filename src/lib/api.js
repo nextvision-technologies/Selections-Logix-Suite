@@ -175,6 +175,24 @@ export async function findReceiverByCnic(customerId, cnic, exceptPhone) {
   return rows[0] || null;
 }
 
+/** Saved receivers with their customer's name, most recently used first. Pass a customer id to narrow it. */
+export async function listReceivers(customerId) {
+  const [rows, customers] = await Promise.all([
+    listAll(T.receivers, customerId ? [Query.equal('customer_id', customerId)] : []),
+    customerId ? [] : listAll(T.customers, [Query.select(['$id', 'business_name'])]),
+  ]);
+  const c = byId(customers);
+  return rows
+    .map((r) => ({ ...r, customer: c[r.customer_id]?.business_name || '' }))
+    .sort((a, b) => String(b.last_used_at || '').localeCompare(String(a.last_used_at || '')));
+}
+
+/** Edit a saved receiver (admin, branch manager, or the user who first saved it). */
+export const updateReceiver = (id, r) => callApi('receivers.update', {
+  id, phone: r.phone, alt_phone: r.alt_phone || '', name: r.name, cnic: r.cnic || '',
+  address: r.address, landmark: r.landmark || '', city: r.city, zone: r.zone || '',
+});
+
 /** Save after a booking: new number creates a receiver, a known number updates it. */
 export const saveReceiver = (customerId, r) => callApi('receivers.save', {
   customer_id: customerId, phone: r.phone, alt_phone: r.altPhone || '', name: r.name, cnic: r.cnic || '',

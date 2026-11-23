@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { PackagePlus, Printer, Truck, XCircle, RefreshCw } from 'lucide-react';
+import { FileSpreadsheet, PackagePlus, Printer, Truck, XCircle, RefreshCw } from 'lucide-react';
 import DataTable from '../../components/tables/DataTable.jsx';
 import { Modal, PageHeader } from '../../components/ui/index.jsx';
 import { PrintPreview, ShippingLabel } from '../../components/print/index.jsx';
@@ -153,7 +153,14 @@ export function ShipmentList() {
       <PageHeader
         title="Shipments"
         subtitle={`${shipments.length} shipments in your view`}
-        actions={user.role !== 'warehouse' && <Link to="/shipments/new" className="btn-primary"><PackagePlus size={16} aria-hidden /> Create Shipment</Link>}
+        actions={(
+          <>
+            {['super_admin', 'branch_manager', 'merchant', 'warehouse'].includes(user.role) && (
+              <Link to={user.role === 'warehouse' ? '/bulk?tab=status' : '/bulk?tab=booking'} className="btn-outline"><FileSpreadsheet size={16} aria-hidden /> {user.role === 'warehouse' ? 'Bulk status update' : 'Bulk import'}</Link>
+            )}
+            {user.role !== 'warehouse' && <Link to="/shipments/new" className="btn-primary"><PackagePlus size={16} aria-hidden /> Create Shipment</Link>}
+          </>
+        )}
       />
       <DataTable
         columns={columns}

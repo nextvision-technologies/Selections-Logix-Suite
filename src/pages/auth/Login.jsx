@@ -47,23 +47,34 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
-      <section className="relative flex flex-col justify-between overflow-hidden bg-primary p-6 lg:w-5/12 lg:p-12">
-        <div className="absolute -end-20 -top-20 h-72 w-72 rounded-full bg-primary-hover/60" aria-hidden />
-        <div className="absolute -bottom-24 -start-16 h-72 w-72 rounded-full bg-danger/90" aria-hidden />
-        <div className="relative">
-          <span className="inline-block rounded-xl bg-white p-2"><Logo /></span>
+      <section className="relative flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#12204A] via-[#0B1530] to-[#070D1F] p-6 text-white lg:w-[46%] lg:p-12">
+        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,.07)_1px,transparent_1px)] [background-size:20px_20px]" />
+        <div className="absolute -end-24 -top-24 h-80 w-80 rounded-full bg-blue-600/25 blur-3xl" aria-hidden />
+        <div className="absolute -bottom-28 -start-20 h-80 w-80 rounded-full bg-primary/25 blur-3xl" aria-hidden />
+        <div className="relative animate-fade-up"><Logo dark /></div>
+        <div className="relative mt-10 animate-fade-up lg:mt-0">
+          <p className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-primary ring-1 ring-white/15">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" aria-hidden /> Logistics, end to end
+          </p>
+          <h1 className="text-4xl leading-[1.1] text-white lg:text-6xl">Ship. Collect.<br /><span className="bg-gradient-to-r from-primary to-amber-300 bg-clip-text text-transparent">Control.</span></h1>
+          <p className="mt-4 max-w-md text-sm text-slate-300 lg:text-base">Courier, COD, cargo, warehouse, customs, returns, finance and support in one system.</p>
+          <ul className="mt-8 hidden gap-3 sm:grid sm:grid-cols-3 sm:gap-4">
+            {[['Live tracking', 'Every parcel, every scan'], ['COD control', 'Rider to payout'], ['Role based', 'Six team roles']].map(([t, d]) => (
+              <li key={t} className="rounded-2xl bg-white/[.06] p-4 ring-1 ring-white/10 backdrop-blur">
+                <p className="font-brand text-sm font-bold text-white">{t}</p>
+                <p className="mt-0.5 text-xs text-slate-400">{d}</p>
+              </li>
+            ))}
+          </ul>
         </div>
-        <div className="relative mt-8 lg:mt-0">
-          <h1 className="text-3xl font-extrabold leading-tight lg:text-5xl">Ship. Collect. Control.</h1>
-          <p className="mt-3 max-w-md text-sm lg:text-base">Courier, COD, cargo, warehouse, customs, returns, finance and support in one system.</p>
-        </div>
-        <p className="relative mt-6 hidden text-xs font-medium text-white lg:block">Selections Technologies</p>
+        <p className="relative mt-6 hidden text-xs font-medium text-slate-400 lg:block">© Selections Technologies</p>
       </section>
 
-      <section className="flex flex-1 items-center justify-center bg-white p-6">
-        <div className="w-full max-w-md">
-          <h2 className="mb-6 text-xl font-bold">Sign in to your account</h2>
-          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-3">
+      <section className="flex flex-1 items-center justify-center bg-white p-6 sm:p-10">
+        <div className="w-full max-w-md animate-fade-up">
+          <h2 className="text-2xl sm:text-3xl">Welcome back</h2>
+          <p className="mb-7 mt-1 text-sm text-ink-muted">Sign in to your account to continue.</p>
+          <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
             <div>
               <label htmlFor="email" className="label">Email</label>
               <input id="email" type="email" autoComplete="username" placeholder="you@company.com" className={`input ${errors.email ? 'input-error' : ''}`} {...register('email')} />
@@ -90,7 +101,7 @@ export default function Login() {
               Remember me
             </label>
             {(failed || (!user && authError)) && <p role="alert" className="rounded-lg bg-danger-light px-3 py-2 text-sm text-danger-dark">{failed || authError}</p>}
-            <button type="submit" className="btn-primary w-full" disabled={isSubmitting}>
+            <button type="submit" className="btn-primary h-11 w-full text-[15px]" disabled={isSubmitting}>
               {isSubmitting && <Loader2 size={16} className="animate-spin" aria-hidden />} Sign in
             </button>
           </form>
